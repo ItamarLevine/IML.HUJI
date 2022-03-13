@@ -1,12 +1,14 @@
 from __future__ import annotations
 import numpy as np
 from numpy.linalg import inv, det, slogdet
+import matplotlib.pyplot as plt
 
 
 class UnivariateGaussian:
     """
     Class for univariate Gaussian Distribution Estimator
     """
+
     def __init__(self, biased_var: bool = False) -> UnivariateGaussian:
         """
         Estimator for univariate Gaussian mean and variance parameters
@@ -51,8 +53,9 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
-
+        self.mu_ = X.mean()
+        self.var_ = X.var()
+        print(self.mu_, self.var_)
         self.fitted_ = True
         return self
 
@@ -76,7 +79,8 @@ class UnivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+        pdf = np.exp(-((X - self.mu_) ** 2) / 2)
+        return pdf / np.sqrt(2*self.var_*np.pi)
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -104,6 +108,7 @@ class MultivariateGaussian:
     """
     Class for multivariate Gaussian Distribution Estimator
     """
+
     def __init__(self):
         """
         Initialize an instance of multivariate Gaussian estimator
@@ -190,3 +195,26 @@ class MultivariateGaussian:
             log-likelihood calculated
         """
         raise NotImplementedError()
+
+
+# question 1 and 3
+# a = np.random.normal(10, 1, 1000)
+UG = UnivariateGaussian()
+# UG.fit(a)
+# graph = plt.figure()
+# plt.title('Gaussian PDF')
+# plt.ylabel('PDF')
+# plt.xlabel("sample's value")
+# pdf = UG.pdf(a)
+# plt.plot(a, pdf, 'o', color='black')
+# plt.show()
+# question 2
+graph = plt.figure()
+plt.title('Accurate of expectation')
+plt.ylabel('bias from expectation')
+plt.xlabel("sample's size")
+for i in range(100):
+    vec = np.random.normal(10, 1, (i + 1) * 10)
+    UG.fit(vec)
+    plt.plot((i + 1) * 10, np.abs(10 - UG.mu_), 'o', color='black')
+plt.show()
