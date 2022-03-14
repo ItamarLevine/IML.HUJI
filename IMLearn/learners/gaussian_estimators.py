@@ -148,9 +148,11 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
-
+        self.mu_ = X.mean(0)
+        self.cov_ = np.cov(X, rowvar=False)
         self.fitted_ = True
+        print(self.mu_)
+        print(self.cov_)
         return self
 
     def pdf(self, X: np.ndarray):
@@ -197,24 +199,3 @@ class MultivariateGaussian:
         raise NotImplementedError()
 
 
-# question 1 and 3
-# a = np.random.normal(10, 1, 1000)
-UG = UnivariateGaussian()
-# UG.fit(a)
-# graph = plt.figure()
-# plt.title('Gaussian PDF')
-# plt.ylabel('PDF')
-# plt.xlabel("sample's value")
-# pdf = UG.pdf(a)
-# plt.plot(a, pdf, 'o', color='black')
-# plt.show()
-# question 2
-graph = plt.figure()
-plt.title('Accurate of expectation')
-plt.ylabel('bias from expectation')
-plt.xlabel("sample's size")
-for i in range(100):
-    vec = np.random.normal(10, 1, (i + 1) * 10)
-    UG.fit(vec)
-    plt.plot((i + 1) * 10, np.abs(10 - UG.mu_), 'o', color='black')
-plt.show()
