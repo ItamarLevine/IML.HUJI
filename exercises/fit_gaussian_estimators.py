@@ -1,10 +1,7 @@
 from IMLearn.learners import UnivariateGaussian, MultivariateGaussian
 import numpy as np
-import plotly.graph_objects as go
-import plotly.io as pio
 import matplotlib.pyplot as plt
-
-pio.templates.default = "simple_white"
+import datetime
 
 
 def test_univariate_gaussian():
@@ -46,18 +43,31 @@ def test_multivariate_gaussian():
     print(mg.cov_)
 
     # Question 5 - Likelihood evaluation
+    stime = datetime.datetime.now()
     f1 = np.linspace(-10, 10, 200)
-    all_pairs = np.array(np.meshgrid(f1,f1)).T.reshape(-1,2)
-    all_mu = np.zeros((all_pairs.shape[0],4))
-    all_mu[:,1] = all_pairs[:,0]
-    all_mu[:,3] = all_pairs[:,1]
-    all_likelihood = np.apply_along_axis(mg.log_likelihood,1,all_mu,cov_matrix,a)
-    a = 0
+    # create all mu model
+    all_pairs = np.array(np.meshgrid(f1, f1)).T.reshape(-1, 2)
+    all_mu = np.zeros((all_pairs.shape[0], 4))
+    all_mu[:, 1] = all_pairs[:, 0]
+    all_mu[:, 3] = all_pairs[:, 1]
+    # calculate likelihood to all model
+    all_likelihood = np.apply_along_axis(mg.log_likelihood, 1, all_mu, cov_matrix, a).reshape((200,200))
+    # display heatmap
+    fig, ax = plt.subplots()
+    c = ax.pcolormesh(f1, f1, all_likelihood, cmap='RdBu', vmin=all_likelihood.min(), vmax=all_likelihood.max())
+    ax.axis([f1.min(), f1.max(), f1.min(), f1.max()])
+    fig.colorbar(c, ax=ax)
+    plt.show()
+    etime = datetime.datetime.now()
+    print(f"question 5 took {etime-stime} seconds")
+
     # Question 6 - Maximum likelihood
-    raise NotImplementedError()
+    all_pairs = all_pairs.reshape((200,200,2))
+    max_model = all_pairs[all_likelihood == all_likelihood.max()][0]
+    print(max_model)
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # test_univariate_gaussian()
+    test_univariate_gaussian()
     test_multivariate_gaussian()
