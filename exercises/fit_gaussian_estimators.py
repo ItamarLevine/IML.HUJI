@@ -12,6 +12,7 @@ def test_univariate_gaussian():
     a = np.random.normal(10, 1, 1000)
     ug = UnivariateGaussian()
     ug.fit(a)
+    print(ug.mu_, ug.var_)
 
     # Question 2 - Empirically showing sample mean is consistent
     graph = plt.figure()
@@ -41,10 +42,17 @@ def test_multivariate_gaussian():
     a = np.random.multivariate_normal([0, 0, 4, 0], cov_matrix, 1000)
     mg = MultivariateGaussian()
     mg.fit(a)
+    print(mg.mu_)
+    print(mg.cov_)
 
     # Question 5 - Likelihood evaluation
     f1 = np.linspace(-10, 10, 200)
-
+    all_pairs = np.array(np.meshgrid(f1,f1)).T.reshape(-1,2)
+    all_mu = np.zeros((all_pairs.shape[0],4))
+    all_mu[:,1] = all_pairs[:,0]
+    all_mu[:,3] = all_pairs[:,1]
+    all_likelihood = np.apply_along_axis(mg.log_likelihood,1,all_mu,cov_matrix,a)
+    a = 0
     # Question 6 - Maximum likelihood
     raise NotImplementedError()
 

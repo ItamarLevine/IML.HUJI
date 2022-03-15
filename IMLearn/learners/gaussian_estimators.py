@@ -55,7 +55,6 @@ class UnivariateGaussian:
         """
         self.mu_ = X.mean()
         self.var_ = X.var()
-        print(self.mu_, self.var_)
         self.fitted_ = True
         return self
 
@@ -80,7 +79,7 @@ class UnivariateGaussian:
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
         pdf = np.exp(-((X - self.mu_) ** 2) / 2)
-        return pdf / np.sqrt(2*self.var_*np.pi)
+        return pdf / np.sqrt(2 * self.var_ * np.pi)
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -151,8 +150,6 @@ class MultivariateGaussian:
         self.mu_ = X.mean(0)
         self.cov_ = np.cov(X, rowvar=False)
         self.fitted_ = True
-        print(self.mu_)
-        print(self.cov_)
         return self
 
     def pdf(self, X: np.ndarray):
@@ -196,6 +193,11 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
-
-
+        sigma_det = np.linalg.det(cov)
+        constant = (((2 * np.pi) ** mu.shape[0]) * sigma_det) ** -0.5
+        # l_v = np.zeros(len(X))
+        # for i in range(len(X)):
+        #     l_v[i] = np.matmul(np.matmul((X[i]-mu).T,np.linalg.inv(cov)),X[i]-mu)
+        likelihood_vec = np.tensordot(np.dot((X-mu),np.linalg.inv(cov)),(X-mu).T,axes=1).diagonal()
+        log_likelihood = np.log(constant) - 0.5 * likelihood_vec.sum()
+        return log_likelihood
