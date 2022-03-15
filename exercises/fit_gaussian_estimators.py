@@ -32,6 +32,13 @@ def test_univariate_gaussian():
     plt.plot(a, pdf, 'o', color='black')
     plt.show()
 
+    # quiz
+    x = np.array([1, 5, 2, 3, 8, -4, -2, 5, 1, 10, -10, 4, 5, 2, 7, 1, 1, 3, 2, -1, -3, 1, -4, 1, 2, 1,-4, -4, 1, 3, 2, 6, -6, 8, 3, -6, 4, 1, -2, 3, 1, 4, 1, 4, -2, 3, -1, 0, 3, 5, 0, -2])
+    # ug = UnivariateGaussian()
+    # ug.fit(x)
+    print(ug.log_likelihood(1,1,x))
+    print(ug.log_likelihood(10, 1, x))
+
 
 def test_multivariate_gaussian():
     # Question 4 - Draw samples and print fitted model
@@ -48,8 +55,8 @@ def test_multivariate_gaussian():
     # create all mu model
     all_pairs = np.array(np.meshgrid(f1, f1)).T.reshape(-1, 2)
     all_mu = np.zeros((all_pairs.shape[0], 4))
-    all_mu[:, 1] = all_pairs[:, 0]
-    all_mu[:, 3] = all_pairs[:, 1]
+    all_mu[:, 0] = all_pairs[:, 0]
+    all_mu[:, 2] = all_pairs[:, 1]
     # calculate likelihood to all model
     all_likelihood = np.apply_along_axis(mg.log_likelihood, 1, all_mu, cov_matrix, a).reshape((200,200))
     # display heatmap
@@ -69,5 +76,5 @@ def test_multivariate_gaussian():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    test_univariate_gaussian()
+    # test_univariate_gaussian()
     test_multivariate_gaussian()
