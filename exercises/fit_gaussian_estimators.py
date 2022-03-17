@@ -16,10 +16,9 @@ def test_univariate_gaussian():
     plt.title('Accurate of expectation')
     plt.ylabel('bias from expectation')
     plt.xlabel("sample's size")
-    for i in range(100):
-        vec = np.random.normal(10, 1, (i + 1) * 10)
-        ug.fit(vec)
-        plt.plot((i + 1) * 10, np.abs(10 - ug.mu_), 'o', color='black')
+    for i in range(10,1010,10):
+        ug.fit(a[:i])
+        plt.plot(i, np.abs(10 - ug.mu_), 'o', color='black')
     plt.show()
 
     # Question 3 - Plotting Empirical PDF of fitted model
@@ -31,6 +30,13 @@ def test_univariate_gaussian():
     pdf = ug.pdf(a)
     plt.plot(a, pdf, 'o', color='black')
     plt.show()
+
+    # quiz
+    x = np.array([1, 5, 2, 3, 8, -4, -2, 5, 1, 10, -10, 4, 5, 2, 7, 1, 1, 3, 2, -1, -3, 1, -4, 1, 2, 1,-4, -4, 1, 3, 2, 6, -6, 8, 3, -6, 4, 1, -2, 3, 1, 4, 1, 4, -2, 3, -1, 0, 3, 5, 0, -2])
+    # ug = UnivariateGaussian()
+    # ug.fit(x)
+    print(ug.log_likelihood(1,1,x))
+    print(ug.log_likelihood(10, 1, x))
 
 
 def test_multivariate_gaussian():
@@ -48,8 +54,8 @@ def test_multivariate_gaussian():
     # create all mu model
     all_pairs = np.array(np.meshgrid(f1, f1)).T.reshape(-1, 2)
     all_mu = np.zeros((all_pairs.shape[0], 4))
-    all_mu[:, 1] = all_pairs[:, 0]
-    all_mu[:, 3] = all_pairs[:, 1]
+    all_mu[:, 0] = all_pairs[:, 0]
+    all_mu[:, 2] = all_pairs[:, 1]
     # calculate likelihood to all model
     all_likelihood = np.apply_along_axis(mg.log_likelihood, 1, all_mu, cov_matrix, a).reshape((200,200))
     # display heatmap
