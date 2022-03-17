@@ -60,8 +60,8 @@ def test_multivariate_gaussian():
     all_likelihood = np.apply_along_axis(mg.log_likelihood, 1, all_mu, cov_matrix, a).reshape((200,200))
     # display heatmap
     fig, ax = plt.subplots()
-    c = ax.pcolormesh(f1, f1, all_likelihood, cmap='RdBu', vmin=all_likelihood.min(), vmax=all_likelihood.max())
-    ax.axis([f1.min(), f1.max(), f1.min(), f1.max()])
+    c = ax.pcolormesh(f1, f1, all_likelihood, cmap='RdBu', vmin=np.min(all_likelihood), vmax=np.max(all_likelihood),shading='auto')
+    ax.axis([np.min(f1), np.max(f1), np.min(f1), np.max(f1)])
     fig.colorbar(c, ax=ax)
     plt.show()
     etime = datetime.datetime.now()
