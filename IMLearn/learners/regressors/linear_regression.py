@@ -1,11 +1,12 @@
 from __future__ import annotations
 from typing import NoReturn
-from ...base import BaseEstimator
+import numpy.linalg
+#from ...base import BaseEstimator
 import numpy as np
 from numpy.linalg import pinv
 
 
-class LinearRegression(BaseEstimator):
+class LinearRegression:
     """
     Linear Regression Estimator
 
@@ -30,7 +31,7 @@ class LinearRegression(BaseEstimator):
             Coefficients vector fitted by linear regression. To be set in
             `LinearRegression.fit` function.
         """
-        super().__init__()
+        #super().__init__()
         self.include_intercept_, self.coefs_ = include_intercept, None
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
@@ -49,7 +50,12 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        raise NotImplementedError()
+        u, sigma,v = numpy.linalg.svd(X.T)
+        sigma_cross = np.zeros(X.shape)
+        sigma_cross[:len(sigma),:len(sigma)] = np.diag(1/sigma)
+        x_cross = (v @ sigma_cross @ u.T).T
+        self.coefs_ = x_cross @ y
+        print(self.coefs_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -85,3 +91,8 @@ class LinearRegression(BaseEstimator):
             Performance under MSE loss function
         """
         raise NotImplementedError()
+
+
+lr = LinearRegression()
+met = np.arange(12).reshape((6,2))
+lr._fit(met, np.arange(6))

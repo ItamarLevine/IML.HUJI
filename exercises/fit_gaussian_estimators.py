@@ -16,10 +16,9 @@ def test_univariate_gaussian():
     plt.title('Accurate of expectation')
     plt.ylabel('bias from expectation')
     plt.xlabel("sample's size")
-    for i in range(100):
-        vec = np.random.normal(10, 1, (i + 1) * 10)
-        ug.fit(vec)
-        plt.plot((i + 1) * 10, np.abs(10 - ug.mu_), 'o', color='black')
+    for i in range(10,1010,10):
+        ug.fit(a[:i])
+        plt.plot(i, np.abs(10 - ug.mu_), 'o', color='black')
     plt.show()
 
     # Question 3 - Plotting Empirical PDF of fitted model
@@ -61,8 +60,8 @@ def test_multivariate_gaussian():
     all_likelihood = np.apply_along_axis(mg.log_likelihood, 1, all_mu, cov_matrix, a).reshape((200,200))
     # display heatmap
     fig, ax = plt.subplots()
-    c = ax.pcolormesh(f1, f1, all_likelihood, cmap='RdBu', vmin=all_likelihood.min(), vmax=all_likelihood.max())
-    ax.axis([f1.min(), f1.max(), f1.min(), f1.max()])
+    c = ax.pcolormesh(f1, f1, all_likelihood, cmap='RdBu', vmin=np.min(all_likelihood), vmax=np.max(all_likelihood),shading='auto')
+    ax.axis([np.min(f1), np.max(f1), np.min(f1), np.max(f1)])
     fig.colorbar(c, ax=ax)
     plt.show()
     etime = datetime.datetime.now()
@@ -76,5 +75,5 @@ def test_multivariate_gaussian():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # test_univariate_gaussian()
+    test_univariate_gaussian()
     test_multivariate_gaussian()
