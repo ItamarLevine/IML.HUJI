@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import NoReturn
 import numpy.linalg
-# from ...base import BaseEstimator
+from IMLearn.base import BaseEstimator
+from IMLearn.metrics import loss_functions
 import numpy as np
 from numpy.linalg import pinv
 
 
-class LinearRegression():
+class LinearRegression(BaseEstimator):
     """
     Linear Regression Estimator
 
@@ -31,7 +32,7 @@ class LinearRegression():
             Coefficients vector fitted by linear regression. To be set in
             `LinearRegression.fit` function.
         """
-        # super().__init__()
+        super().__init__()
         self.include_intercept_, self.coefs_ = include_intercept, None
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
@@ -94,13 +95,12 @@ class LinearRegression():
         loss : float
             Performance under MSE loss function
         """
-        pass
-        #return loss_functions.mean_square_error(y, self._predict(X))
+        return loss_functions.mean_square_error(y, self._predict(X))
 
 
-lr = LinearRegression(False)
-met = np.array([[2,1],[3,4],[2,2]])
-lr._fit(met, np.array([6,11,7]))
-vec_to_pre = np.arange(12).reshape((-1,3))
-print(lr._predict(met))
+# lr = LinearRegression(False)
+# met = np.array([[2,1],[3,4],[2,2]])
+# lr._fit(met, np.array([6,11,7]))
+# vec_to_pre = np.arange(12).reshape((-1,3))
+# print(lr._predict(met))
 #print(lr._loss(met, np.arange(6)))

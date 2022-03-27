@@ -23,7 +23,12 @@ def load_data(filename: str):
     Design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-    raise NotImplementedError()
+    full_data = pd.read_csv(filename).dropna().drop_duplicates()
+    features = full_data[["bedrooms","bathrooms","sqft_living","sqft_lot","floors","waterfront","view"
+        ,"condition","grade","sqft_above","sqft_basement","yr_built","yr_renovated","zipcode","lat","long"
+        ,"sqft_living15","sqft_lot15"]]
+    labels = full_data["price"]
+    return features, labels
 
 
 def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
@@ -43,16 +48,19 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
-    raise NotImplementedError()
+    cov = np.cov(np.hstack((X,np.array(y).reshape((-1,1)))), rowvar=False)
+    variance = np.diagonal(cov)
+    pearson_correlation = cov[-1] * variance[-1] / variance
+    pearson_correlation = pearson_correlation[:-1]
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
-    raise NotImplementedError()
+    df, response = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    raise NotImplementedError()
+    feature_evaluation(df, response)
 
     # Question 3 - Split samples into training- and testing sets.
     raise NotImplementedError()
