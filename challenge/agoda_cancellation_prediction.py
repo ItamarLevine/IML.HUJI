@@ -32,26 +32,34 @@ def load_data(filename: str):
     return features, labels
 
 
-def evaluate_and_export(estimator: BaseEstimator, X: np.ndarray, filename: str):
-    """
-    Export to specified file the prediction results of given estimator on given testset.
+# def evaluate_and_export(estimator: BaseEstimator, X: np.ndarray, filename: str):
+#     """
+#     Export to specified file the prediction results of given estimator on given testset.
+#
+#     File saved is in csv format with a single column named 'predicted_values' and n_samples rows containing
+#     predicted values.
+#
+#     Parameters
+#     ----------
+#     estimator: BaseEstimator or any object implementing predict() method as in BaseEstimator (for example sklearn)
+#         Fitted estimator to use for prediction
+#
+#     X: ndarray of shape (n_samples, n_features)
+#         Test design matrix to predict its responses
+#
+#     filename:
+#         path to store file at
+#
+#     """
+#     pd.DataFrame(estimator.predict(X), columns=["predicted_values"]).to_csv(filename, index=False)
 
-    File saved is in csv format with a single column named 'predicted_values' and n_samples rows containing
-    predicted values.
-
-    Parameters
-    ----------
-    estimator: BaseEstimator or any object implementing predict() method as in BaseEstimator (for example sklearn)
-        Fitted estimator to use for prediction
-
-    X: ndarray of shape (n_samples, n_features)
-        Test design matrix to predict its responses
-
-    filename:
-        path to store file at
-
-    """
-    pd.DataFrame(estimator.predict(X), columns=["predicted_values"]).to_csv(filename, index=False)
+def data_frame_to_nomeric(data):
+    ind = np.where(data.dtypes.array == np.dtype('O'))
+    for index in ind:
+        a = np.unique(data.values.T[index[0]])
+        d = dict(zip(a,np.arange(len(a))))
+    #d = pd.DataFrame({data.})
+    z = 1
 
 
 if __name__ == '__main__':
@@ -59,10 +67,11 @@ if __name__ == '__main__':
 
     # Load data
     df, cancellation_labels = load_data("../datasets/agoda_cancellation_train.csv")
+    data_frame_to_nomeric(df)
     train_X, train_y, test_X, test_y = split_train_test(df, cancellation_labels)
 
     # Fit model over data
-    estimator = AgodaCancellationEstimator().fit(train_X, train_y)
+    # estimator = AgodaCancellationEstimator().fit(train_X, train_y)
 
     # Store model predictions over test set
-    evaluate_and_export(estimator, test_X, "id1_id2_id3.csv")
+    # evaluate_and_export(estimator, test_X, "id1_id2_id3.csv")
