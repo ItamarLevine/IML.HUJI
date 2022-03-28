@@ -4,6 +4,7 @@ from IMLearn.learners.regressors import LinearRegression
 from typing import NoReturn
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
@@ -72,4 +73,17 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    raise NotImplementedError()
+    lr = LinearRegression()
+
+    graph = plt.figure()
+    plt.title('Average loss ad function of trainig size')
+    plt.ylabel('average loss')
+    plt.xlabel("sample's size")
+    for i in range(1,11):
+        index = int(np.ceil(len(train_x) * i / 100))
+        lr.fit(train_x[:index], train_y[:index])
+        loss = lr.loss(test_x, test_y)
+        print(loss)
+        plt.plot(index, loss, 'o', color='black')
+    plt.show()
+

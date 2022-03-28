@@ -58,7 +58,6 @@ class LinearRegression(BaseEstimator):
         sigma_cross[:len(sigma),:len(sigma)] = np.diag(1/sigma)
         x_cross = v.T @ sigma_cross.T @ u.T
         self.coefs_ = x_cross @ y
-        print(self.coefs_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -96,11 +95,3 @@ class LinearRegression(BaseEstimator):
             Performance under MSE loss function
         """
         return loss_functions.mean_square_error(y, self._predict(X))
-
-
-# lr = LinearRegression(False)
-# met = np.array([[2,1],[3,4],[2,2]])
-# lr._fit(met, np.array([6,11,7]))
-# vec_to_pre = np.arange(12).reshape((-1,3))
-# print(lr._predict(met))
-#print(lr._loss(met, np.arange(6)))
