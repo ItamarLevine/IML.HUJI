@@ -25,11 +25,21 @@ def load_data(filename: str):
     DataFrame or a Tuple[DataFrame, Series]
     """
     full_data = pd.read_csv(filename).dropna().drop_duplicates()
+    # erase negative prices
+    full_data = full_data.drop(np.where(full_data["price"].values < 0)[0])
     features = full_data[["bedrooms","bathrooms","sqft_living","sqft_lot","floors","waterfront","view"
         ,"condition","grade","sqft_above","sqft_basement","yr_built","yr_renovated","zipcode","lat","long"
         ,"sqft_living15","sqft_lot15"]]
     labels = full_data["price"]
+    # features = clean_big_deviation(features,3)
     return features, labels
+
+
+def clean_big_deviation(X, k):
+    for feature in X.columns.values:
+        ind = np.where(np.abs(X[feature] - X[feature].mean()) > k * X[feature].std())[0]
+        X[feature].values[ind.astype(int)] = X[feature].mean()
+    return X
 
 
 def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
@@ -51,8 +61,16 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     """
     cov = np.cov(np.hstack((X,np.array(y).reshape((-1,1)))), rowvar=False)
     variance = np.diagonal(cov)
-    pearson_correlation = cov[-1] * variance[-1] / variance
+    pearson_correlation = cov[-1] / (variance[-1] * variance)
     pearson_correlation = pearson_correlation[:-1]
+    features = ['zipcode','sqft_above','condition']
+    for feature in features:
+        index = np.where(X.columns == feature)[0]
+        graph = plt.figure()
+        plt.title(f"the pearson's correlation for {feature} is {pearson_correlation[index][0]}\n")
+        plt.xlabel("feature's data")
+        plt.ylabel("price")
+        plt.plot(X[feature].values,y.values, 'o',color='blue')
 
 
 if __name__ == '__main__':
@@ -76,7 +94,7 @@ if __name__ == '__main__':
     lr = LinearRegression()
 
     graph = plt.figure()
-    plt.title('Average loss ad function of trainig size')
+    plt.title('Average loss as function of trainig size')
     plt.ylabel('average loss')
     plt.xlabel("sample's size")
     for i in range(1,11):
