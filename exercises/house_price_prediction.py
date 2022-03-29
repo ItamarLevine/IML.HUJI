@@ -5,10 +5,6 @@ from typing import NoReturn
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.express as px
-import plotly.io as pio
-pio.templates.default = "simple_white"
 
 
 def load_data(filename: str):
@@ -27,18 +23,20 @@ def load_data(filename: str):
     full_data = pd.read_csv(filename).dropna().drop_duplicates()
     # erase negative prices
     full_data = full_data.drop(np.where(full_data["price"].values < 0)[0])
-    features = full_data[["bedrooms","bathrooms","sqft_living","sqft_lot","floors","waterfront","view"
-        ,"condition","grade","sqft_above","sqft_basement","yr_built","yr_renovated","zipcode","lat","long"
+    # feature i dropped: "lat","long", "id", "date",waterfront
+    features = full_data[["bedrooms","bathrooms","sqft_living","sqft_lot","floors","view"
+        ,"condition","grade","sqft_above","sqft_basement","yr_built","yr_renovated","zipcode"
         ,"sqft_living15","sqft_lot15"]]
+    features = pd.concat([features,pd.get_dummies(full_data[["waterfront"]])],axis=1)
     labels = full_data["price"]
-    # features = clean_big_deviation(features,3)
     return features, labels
 
 
 def clean_big_deviation(X, k):
     for feature in X.columns.values:
-        ind = np.where(np.abs(X[feature] - X[feature].mean()) > k * X[feature].std())[0]
-        X[feature].values[ind.astype(int)] = X[feature].mean()
+        bad_ind = np.where(np.abs(X[feature] - X[feature].mean()) > k * X[feature].std())[0]
+        good_ind = np.setdiff1d(np.arange(len(X)), bad_ind)
+        X[feature].values[bad_ind.astype(int)] = X[feature].values[good_ind.astype(int)].mean()
     return X
 
 
@@ -79,7 +77,7 @@ if __name__ == '__main__':
     df, response = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    feature_evaluation(df, response)
+    #feature_evaluation(df, response)
 
     # Question 3 - Split samples into training- and testing sets.
     train_x, train_y, test_x, test_y = split_train_test(df, response)
@@ -102,6 +100,7 @@ if __name__ == '__main__':
         lr.fit(train_x[:index], train_y[:index])
         loss = lr.loss(test_x, test_y)
         print(loss)
-        plt.plot(index, loss, 'o', color='black')
+        if i > 1:
+            plt.plot(i/10, loss, 'o', color='black')
     plt.show()
 

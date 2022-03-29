@@ -55,7 +55,8 @@ class LinearRegression(BaseEstimator):
             X = np.hstack((np.ones(len(X)).reshape((-1,1)),X))
         u, sigma,v = numpy.linalg.svd(X)
         sigma_cross = np.zeros(X.shape)
-        sigma_cross[:len(sigma),:len(sigma)] = np.diag(1/sigma)
+        good_ind = np.setdiff1d(np.arange(len(sigma)),np.where(np.isclose(sigma,0)))
+        sigma_cross[:len(sigma[good_ind]),:len(sigma[good_ind])] = np.diag(1/sigma[good_ind])
         x_cross = v.T @ sigma_cross.T @ u.T
         self.coefs_ = x_cross @ y
 
