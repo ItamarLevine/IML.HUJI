@@ -94,6 +94,8 @@ if __name__ == '__main__':
     plt.title('Average loss as function of training size')
     plt.ylabel('average loss')
     plt.xlabel("sample's size")
+    std_vec = np.zeros(91)
+    loss_vec_vec = np.zeros(91)
     for i in range(10,101):
         # index = int(np.ceil(len(train_x) * i / 100))
         loss_vec = np.zeros(10)
@@ -103,8 +105,10 @@ if __name__ == '__main__':
             loss_vec[j] = lr.loss(test_x, test_y)
         loss = loss_vec.mean()
         std_loss = loss_vec.std()
+        std_vec[i-10] = std_loss
+        loss_vec_vec[i-10] = loss
         print(loss)
-        plt.scatter(i/100, loss, s=3, color='blue')
-        plt.fill_between((np.arange(90)+10)/100, loss - 2 * std_loss, loss + 2 * std_loss, alpha=0.2)
+    plt.plot((np.arange(91)+10)/100, loss_vec_vec, color='blue')
+    plt.fill_between((np.arange(91)+10)/100, loss_vec_vec - 2 * std_vec, loss_vec_vec + 2 * std_vec, alpha=0.2)
     plt.show()
 
