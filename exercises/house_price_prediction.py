@@ -22,7 +22,7 @@ def load_data(filename: str):
     """
     full_data = pd.read_csv(filename).dropna().drop_duplicates()
     # erase negative prices
-    full_data = full_data.drop(np.where(full_data["price"].values < 0)[0])
+    full_data = full_data.drop(np.where(full_data["price"].values <= 0)[0])
     # feature i dropped: "lat","long", "id", "date",waterfront
     features = full_data[["bedrooms","bathrooms","sqft_living","sqft_lot","floors","view"
         ,"condition","grade","sqft_above","sqft_basement","yr_built","yr_renovated","zipcode"
@@ -59,9 +59,9 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     """
     cov = np.cov(np.hstack((X,np.array(y).reshape((-1,1)))), rowvar=False)
     variance = np.diagonal(cov)
-    pearson_correlation = cov[-1] / (variance[-1] * variance)
+    pearson_correlation = cov[-1] / ((variance[-1] * variance) ** 0.5)
     pearson_correlation = pearson_correlation[:-1]
-    features = ['zipcode','sqft_above','condition']
+    features = ['view','sqft_above']
     for feature in features:
         index = np.where(X.columns == feature)[0]
         graph = plt.figure()
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     df, response = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    #feature_evaluation(df, response)
+    feature_evaluation(df, response)
 
     # Question 3 - Split samples into training- and testing sets.
     train_x, train_y, test_x, test_y = split_train_test(df, response)
@@ -90,17 +90,21 @@ if __name__ == '__main__':
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
     lr = LinearRegression()
-
     graph = plt.figure()
-    plt.title('Average loss as function of trainig size')
+    plt.title('Average loss as function of training size')
     plt.ylabel('average loss')
     plt.xlabel("sample's size")
-    for i in range(1,11):
-        index = int(np.ceil(len(train_x) * i / 100))
-        lr.fit(train_x[:index], train_y[:index])
-        loss = lr.loss(test_x, test_y)
+    for i in range(10,101):
+        # index = int(np.ceil(len(train_x) * i / 100))
+        loss_vec = np.zeros(10)
+        for j in range(10):
+            p_train_x, p_train_y, _, __ = split_train_test(train_x, train_y, train_proportion=i/100)
+            lr.fit(p_train_x, p_train_y)
+            loss_vec[j] = lr.loss(test_x, test_y)
+        loss = loss_vec.mean()
+        std_loss = loss_vec.std()
         print(loss)
-        if i > 1:
-            plt.plot(i/10, loss, 'o', color='black')
+        plt.scatter(i/100, loss, s=3, color='blue')
+        plt.fill_between((np.arange(90)+10)/100, loss - 2 * std_loss, loss + 2 * std_loss, alpha=0.2)
     plt.show()
 
