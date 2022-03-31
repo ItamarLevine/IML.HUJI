@@ -39,7 +39,7 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .2
     index = np.setdiff1d(np.arange(len(X)), index)
     test_x = X.values[index]
     test_y = y.values[index]
-    return train_x, train_y, test_x, test_y
+    return pd.DataFrame(train_x), pd.Series(train_y), pd.DataFrame(test_x), pd.Series(test_y)
 
 
 def confusion_matrix(a: np.ndarray, b: np.ndarray) -> np.ndarray:
