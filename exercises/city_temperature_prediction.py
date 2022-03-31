@@ -88,4 +88,13 @@ if __name__ == '__main__':
             plt.scatter(k, loss, color='blue')
     plt.show()
     # Question 5 - Evaluating fitted model on different countries
-    raise NotImplementedError()
+    plt.title("loss as function of country")
+    plt.ylabel('loss')
+    plt.xlabel("Country")
+    pf.fit(np.array(day_of_year),np.array(sub_df["Temp"]))
+    for county in np.unique(df["Country"]):
+        if county != "Israel":
+            sub_df = df.loc[df['Country'] == county]
+            loss = pf.loss(np.array(sub_df["day_of_year"]), np.array(sub_df["Temp"]))
+            plt.bar(county, loss)
+    plt.show()
