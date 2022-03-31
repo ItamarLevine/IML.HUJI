@@ -72,7 +72,20 @@ if __name__ == '__main__':
     plt.legend(loc='upper left')
     plt.show()
     # Question 4 - Fitting model for different values of `k`
-    raise NotImplementedError()
-
+    sub_df = df.loc[df['Country'] == "Israel"]
+    day_of_year = sub_df["day_of_year"]
+    train_x, train_y, test_x, test_y = split_train_test(day_of_year, sub_df["Temp"])
+    graph = plt.figure()
+    plt.title("loss as function of degree")
+    plt.ylabel('loss')
+    plt.xlabel("degree")
+    for k in range(1,11):
+        pf = PolynomialFitting(k)
+        pf.fit(np.array(train_x), np.array(train_y))
+        loss = pf.loss(np.array(test_x),np.array(test_y))
+        print(loss)
+        if k > 1:
+            plt.scatter(k, loss, color='blue')
+    plt.show()
     # Question 5 - Evaluating fitted model on different countries
     raise NotImplementedError()
