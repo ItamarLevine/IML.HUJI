@@ -22,8 +22,12 @@ def load_data(filename: str):
     3) Tuple of ndarray of shape (n_samples, n_features) and ndarray of shape (n_samples,)
     """
     # TODO - replace below code with any desired preprocessing
-    full_data = pd.read_csv(filename).dropna().drop_duplicates()
+    full_data = pd.read_csv(filename).drop_duplicates()
     print(full_data.columns.values)
+    # change nan to 0
+    index_nan = np.flatnonzero(np.core.defchararray.find(full_data.values.astype(str), "nan") != -1)
+    index_nan = np.array([[(index_nan / full_data.values.shape[1]).astype(int),(index_nan % full_data.values.shape[1]).astype(int)]]).reshape(2,len(index_nan))
+    full_data.values[index_nan.astype(int)] = 0
     # change dates to numbers
     index_date = np.flatnonzero(np.core.defchararray.find(full_data.columns.values.astype(str), "date") != -1)
     vec_date_to_numeric = np.vectorize(date_to_numeric)
@@ -47,6 +51,8 @@ def load_data(filename: str):
 
 
 def date_to_numeric(date):
+    if date == 0:
+        return 0
     date = date.split()[0]
     return int("".join(date.split("-")))
 
