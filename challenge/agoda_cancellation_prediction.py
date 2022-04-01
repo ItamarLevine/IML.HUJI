@@ -21,13 +21,9 @@ def load_data(filename: str):
     2) Tuple of pandas.DataFrame and Series
     3) Tuple of ndarray of shape (n_samples, n_features) and ndarray of shape (n_samples,)
     """
-    # TODO - replace below code with any desired preprocessing
     full_data = pd.read_csv(filename).drop_duplicates()
-    print(full_data.columns.values)
     # change nan to 0
-    index_nan = np.flatnonzero(np.core.defchararray.find(full_data.values.astype(str), "nan") != -1)
-    index_nan = np.array([[(index_nan / full_data.values.shape[1]).astype(int),(index_nan % full_data.values.shape[1]).astype(int)]]).reshape(2,len(index_nan))
-    full_data.values[index_nan.astype(int)] = 0
+    full_data = full_data.fillna(0)
     # change dates to numbers
     index_date = np.flatnonzero(np.core.defchararray.find(full_data.columns.values.astype(str), "date") != -1)
     vec_date_to_numeric = np.vectorize(date_to_numeric)
@@ -46,7 +42,16 @@ def load_data(filename: str):
                           'request_twinbeds', 'request_airport', 'request_earlycheckin',
                           'hotel_area_code', 'hotel_brand_code', 'hotel_chain_code', 'hotel_city_code']]
     labels = full_data["cancellation_datetime"]
-
+    features = parse_cancellation_policy(features)
+    # cov = np.cov(np.hstack((features.values,np.array(labels).reshape((-1,1)))), rowvar=False)
+    # variance = np.diagonal(cov)
+    # pearson_correlation = cov[-1] / ((variance[-1] * variance) ** 0.5)
+    # pearson_correlation = pearson_correlation[:-1]
+    # d = {}
+    # for feature in features.columns.values:
+    #     index = np.where(features.columns == feature)[0]
+    #     d[feature] = pearson_correlation[index][0]
+    # print(d)
     return features, labels
 
 
@@ -55,6 +60,45 @@ def date_to_numeric(date):
         return 0
     date = date.split()[0]
     return int("".join(date.split("-")))
+
+
+def parse_cancellation_policy(dataframe):
+    vec_parse_cancellation = np.vectorize(parse_one_cancellation_policy)
+    mat = vec_parse_cancellation(dataframe["cancellation_policy_code"])
+    split_cancellation_policy = np.vectorize(cancellation_policy_index,excluded=[1])
+    dataframe = dataframe.assign(cpc_d1=split_cancellation_policy(mat, 0))
+    dataframe = dataframe.assign(cpc_p1=split_cancellation_policy(mat, 1))
+    dataframe = dataframe.assign(cpc_n1=split_cancellation_policy(mat, 2))
+    dataframe = dataframe.assign(cpc_d2=split_cancellation_policy(mat, 3))
+    dataframe = dataframe.assign(cpc_p2=split_cancellation_policy(mat, 4))
+    dataframe = dataframe.assign(cpc_n2=split_cancellation_policy(mat, 5))
+    dataframe = dataframe.assign(cpc_no_show_p=split_cancellation_policy(mat, 6))
+    dataframe = dataframe.assign(cpc_no_show_n=split_cancellation_policy(mat, 7))
+    return dataframe
+
+def cancellation_policy_index(cancellation_a, i):
+    return cancellation_a[i]
+
+
+def parse_one_cancellation_policy(cancellation):
+    if cancellation == "UNKNOWN":
+        return np.zeros(8)
+    cancellation_split = cancellation.split("_")
+    parsed = np.zeros(8).astype(pd.Series)
+    for i, phase in enumerate(cancellation_split):
+        if "D" in phase:
+            parsed[0+i] = int(phase.split("D")[0])
+        else:
+            if "P" in phase:
+                parsed[6] = int(phase.split("P")[0])
+            elif "N" in phase:
+                parsed[7] = int(phase.split("N")[0])
+            continue
+        if "P" in phase:
+            parsed[1+i] = int(phase.split("D")[1].split("P")[0])
+        elif "N" in phase:
+            parsed[2+i] = int(phase.split("D")[1].split("N")[0])
+    return parsed.astype(pd.Series)
 
 
 def evaluate_and_export(estimator: BaseEstimator, X: np.ndarray, filename: str):
