@@ -6,6 +6,11 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
+import json
+import requests
+
+BASE_DATE = pd.to_datetime('1/1/2016')
+
 
 def load_data(filename: str):
     """
@@ -15,6 +20,74 @@ def load_data(filename: str):
     filename: str
         Path to house prices dataset
 
+    Returns
+    -------
+    Design matrix and response vector in either of the following formats:
+    1) Single dataframe with last column representing the response
+    2) Tuple of pandas.DataFrame and Series
+    3) Tuple of ndarray of shape (n_samples, n_features) and ndarray of shape (n_samples,)
+    """
+    full_data = pd.read_csv(filename).drop_duplicates()
+    l = ["booking_datetime","checkin_date","checkout_date","hotel_live_date"]
+    if "cancellation_datetime" in full_data.columns.values:
+        l.append("cancellation_datetime")
+    for d in l:
+        full_data[d] = pd.to_datetime(full_data[d])
+    # change nan to 0
+    full_data = full_data.fillna(0)
+    # change dates to numbers
+    index_date = np.flatnonzero(np.core.defchararray.find(full_data.columns.values.astype(str), "date") != -1)
+    vec_date_to_numeric = np.vectorize(date_to_numeric)
+    mat = vec_date_to_numeric(full_data.values[:, index_date.astype(int)])
+    for i, feature in enumerate(full_data.columns.values[index_date]):
+        full_data = full_data.drop(feature, axis=1)
+        full_data.insert(int(index_date[i]), feature, mat[:, i], True)
+    # choose the relevant feature, dropped: h_booking_id, h_customer_id 'hotel_area_code', 'hotel_brand_code',
+    #                                       'hotel_chain_code', 'hotel_city_code', original_payment_currency
+    #                                       'hotel_country_code', 'accommadation_type_name', 'customer_nationality',
+    #                                        'guest_nationality_country_name',  'origin_country_code', 'language',
+    #                                        'original_payment_method', , 'request_airport' 'hotel_id'
+    did_cancel = 0
+    if "cancellation_datetime" in full_data.columns.values:
+        did_cancel = np.sign(full_data["cancellation_datetime"])
+        full_data = full_data.drop("cancellation_datetime", axis=1)
+    features = full_data[['booking_datetime', 'checkin_date', 'checkout_date',
+                          'hotel_live_date', 'hotel_star_rating',
+                          'guest_is_not_the_customer',
+                          'no_of_adults', 'no_of_children',
+                          'no_of_extra_bed', 'no_of_room',
+                          'original_selling_amount', 'is_user_logged_in',
+                          'cancellation_policy_code', 'is_first_booking', 'request_nonesmoke',
+                          'request_latecheckin', 'request_highfloor', 'request_largebed',
+                          'request_twinbeds', 'request_earlycheckin']]
+
+    conversion_rates = requests.get('https://v6.exchangerate-api.com/v6/b7516dbaf2d4a78e08d4c8cf/latest/USD').json()[
+        "conversion_rates"]
+    to_usd = full_data["original_payment_currency"].apply(lambda x: conversion_rates[x])
+    features["original_selling_amount"] = features["original_selling_amount"] * to_usd
+
+    #full_data["guest_country.cat"] = pd.Categorical(full_data["guest_nationality_country_name"]).codes
+    #print(full_data["guest_country.cat"].plot.hist())
+
+    features = pd.concat([features, pd.get_dummies(full_data[['accommadation_type_name']])], axis=1)
+    features = pd.concat([features, pd.get_dummies(full_data[['origin_country_code']])], axis=1)
+    features = pd.concat([features, pd.get_dummies(full_data[['original_payment_method']])], axis=1)
+    #features = pd.concat([features, pd.get_dummies(full_data[['guest_nationality_country_name']])], axis=1)
+    features = pd.concat([features, pd.get_dummies(full_data[['charge_option']])], axis=1)
+    features = pd.concat([features, pd.get_dummies(full_data[['original_payment_type']])], axis=1)
+    features = pd.concat([features, pd.get_dummies(full_data[['hotel_brand_code']])], axis=1)
+    labels = did_cancel
+    features = parse_cancellation_policy(features)
+    return features, labels
+
+
+def load_data2(filename: str):
+    """
+    Load Agoda booking cancellation dataset
+    Parameters
+    ----------
+    filename: str
+        Path to house prices dataset
     Returns
     -------
     Design matrix and response vector in either of the following formats:
@@ -51,6 +124,10 @@ def load_data(filename: str):
     features = pd.concat([features, pd.get_dummies(full_data[['guest_nationality_country_name']])], axis=1)
     features = pd.concat([features, pd.get_dummies(full_data[['charge_option']])], axis=1)
     features = pd.concat([features, pd.get_dummies(full_data[['original_payment_type']])], axis=1)
+    # conversion_rates = requests.get('https://v6.exchangerate-api.com/v6/b7516dbaf2d4a78e08d4c8cf/latest/USD').json()[
+    #     "conversion_rates"]
+    # to_usd = full_data["original_payment_currency"].apply(lambda x: conversion_rates[x])
+    # features["original_selling_amount"] = features["original_selling_amount"] * to_usd
     #labels = np.zeros(len(full_data["cancellation_datetime"]))
     #labels[np.where(full_data["cancellation_datetime"].values != 0)[0]] = 1
     labels = full_data["cancellation_datetime"]
@@ -61,8 +138,7 @@ def load_data(filename: str):
 def date_to_numeric(date):
     if date == 0:
         return 0
-    date = date.split()[0]
-    return int("".join(date.split("-")))
+    return (date - BASE_DATE).days
 
 
 def parse_cancellation_policy(dataframe):
@@ -133,49 +209,76 @@ if __name__ == '__main__':
 
     # Load data
     df, cancellation_labels = load_data("../datasets/agoda_cancellation_train.csv")
-    train_X, train_y, test_X, test_y = split_train_test(df, pd.Series(cancellation_labels))
-
-    # linear regression
-    linear_regression = LinearRegression()
-    linear_regression.fit(train_X, train_y)
-    y_ = linear_regression.predict(test_X)
-    threshold = 10000000
-    y_[np.where(y_ <= threshold)[0]] = 0
-    y_[np.where(y_ > threshold)[0]] = 1
-    thresh_y = np.zeros(len(test_y))
-    thresh_y[np.where(test_y.values != 0)[0]] = 1
-    loss = np.abs(y_ - thresh_y).mean()
-    print(f"linear regression's loss is {loss}")
-
-    # knn
-    # knn = KNeighborsClassifier(15)
-    # knn.fit(train_X, train_y)
-    # y1_ = knn.predict(test_X)
-    # y1_[np.where(y1_ != 0)[0]] = 1
-    # loss = np.abs(y1_ - thresh_y).mean()
-    # print(f"knn's loss is {loss}")
-
-
-    # soft svm
-    # svm = LogisticRegression()
-    # svm.fit(train_X, train_y)
-    # y_ = svm.predict(test_X)
-    # threshold = 10000000
-    # y_[np.where(y_ <= threshold)[0]] = 0
-    # y_[np.where(y_ > threshold)[0]] = 1
+    # train_X, train_y, test_X, test_y = split_train_test(df, pd.Series(cancellation_labels), 0.75)
+    #
     # thresh_y = np.zeros(len(test_y))
     # thresh_y[np.where(test_y.values != 0)[0]] = 1
+    # loss = np.abs(np.zeros(len(test_y)) - thresh_y).mean()
+    # print(f"default loss is {loss}")
+
+    # linear regression
+    # linear_regression = LinearRegression()
+    # linear_regression.fit(train_X, train_y)
+    # y_ = linear_regression.predict(test_X)
+    # threshold2 = 0.5
+    # y_[np.where(y_ <= threshold2)[0]] = 0
+    # y_[np.where(y_ > threshold2)[0]] = 1
     # loss = np.abs(y_ - thresh_y).mean()
-    # print(f"svm's loss is {loss}")
+    # print(f"linear regression's loss is {loss}")
+    # recall = np.sum(test_y * y_)
+    # print(f"linear regression's TP is {recall} out of {np.sum(test_y)}")
 
+    # logistic regression
+    # LR = LogisticRegression()
+    # LR.fit(train_X, train_y)
+    # y1_ = LR.predict_proba(test_X)[:, 1]
+    # cutoff = 0.4
+    # y1_[np.where(y1_ <= cutoff)] = 0
+    # y1_[np.where(y1_ > cutoff)] = 1
+    # loss = np.abs(y1_ - thresh_y).mean()
+    # print(f"logistic regression's loss is {loss}")
+    # recall = np.sum(test_y * y1_)
+    # print(f"logistic regression's TP is {recall} out of {np.sum(test_y)}")
 
-    # y = y_ + y1_
-    # y[np.where(y != 2)[0]] = 0
-    # y = y/2
-    # loss = np.abs(y - thresh_y).mean()
-    # print(f"the combine loss is {loss}")
-    # Fit model over data
-    # estimator = AgodaCancellationEstimator().fit(train_X, train_y)
+    #knn
+    # knn = KNeighborsClassifier()
+    # knn.fit(train_X, train_y)
+    # y2_ = knn.predict_proba(test_X)[:, 1]
+    # cutoff = 0.6
+    # y2_[np.where(y2_ <= cutoff)] = 0
+    # y2_[np.where(y2_ > cutoff)] = 1
+    # loss = np.abs(y2_ - thresh_y).mean()
+    # print(f"knn's loss is {loss}")
+    # recall = np.sum(test_y * y2_)
+    # print(f"knn's TP is {recall} out of {np.sum(test_y)}")
+
+    # or_y = y1_ + y_ + y2_
+    # or_y[or_y >= 2] = 1
+    # loss = np.abs(or_y - thresh_y).mean()
+    # print(f"combine or's loss is {loss}")
+    # recall = np.sum(test_y * or_y)
+    # print(f"combine or's TP is {recall} out of {np.sum(test_y)}")
+    #
+    # and_y = y1_ + y_ + y2_
+    # and_y[and_y == 1] = 0
+    # and_y[and_y == 2] = 0
+    # and_y[and_y == 3] = 1
+    # loss = np.abs(and_y - thresh_y).mean()
+    # print(f"combine and's loss is {loss}")
+    # recall = np.sum(test_y * and_y)
+    # print(f"combine and's TP is {recall} out of {np.sum(test_y)}")
+    #
+    # most_y = y1_ + y_ + y2_
+    # most_y[and_y == 1] = 0
+    # most_y[and_y >= 2] = 1
+    # loss = np.abs(most_y - thresh_y).mean()
+    # print(f"combine most's loss is {loss}")
+    # recall = np.sum(test_y * most_y)
+    # print(f"combine most's TP is {recall} out of {np.sum(test_y)}")
+
+    #Fit model over data
+    estimator = LinearRegression().fit(df, cancellation_labels)
 
     # Store model predictions over test set
-    # evaluate_and_export(estimator, test_X, "id1_id2_id3.csv")
+    test_X, _ = load_data("../datasets/test_set_week_2.csv")
+    evaluate_and_export(estimator, test_X, "313434235_311119895_315421768.csv")
