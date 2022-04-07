@@ -234,5 +234,4 @@ if __name__ == '__main__':
     threshold2 = 0.5
     y_[np.where(y_ <= threshold2)[0]] = 0
     y_[np.where(y_ > threshold2)[0]] = 1
-    print(len(np.where(y_==1)[0]))
     pd.DataFrame(y_, columns=["predicted_values"]).to_csv("313434235_311119895_315421768.csv", index=False)
