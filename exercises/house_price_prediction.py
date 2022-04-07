@@ -69,6 +69,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
         plt.xlabel("feature's data")
         plt.ylabel("price")
         plt.plot(X[feature].values,y.values, 'o',color='blue')
+        plt.show()
 
 
 if __name__ == '__main__':
