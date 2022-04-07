@@ -84,7 +84,7 @@ if __name__ == '__main__':
         pf.fit(np.array(train_x), np.array(train_y))
         loss = pf.loss(np.array(test_x),np.array(test_y))
         print(loss)
-        if k > 1:
+        if k > 2:
             plt.scatter(k, loss, color='blue')
     plt.show()
     # Question 5 - Evaluating fitted model on different countries

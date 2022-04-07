@@ -1,6 +1,6 @@
 from IMLearn.utils import split_train_test
 from IMLearn.learners.regressors import LinearRegression
-
+from IMLearn.metrics import loss_functions
 from typing import NoReturn
 import numpy as np
 import pandas as pd
@@ -61,11 +61,11 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     variance = np.diagonal(cov)
     pearson_correlation = cov[-1] / ((variance[-1] * variance) ** 0.5)
     pearson_correlation = pearson_correlation[:-1]
-    features = ['view','sqft_above']
+    features = ['grade','condition']
     for feature in features:
-        index = np.where(X.columns == feature)[0]
+        index = np.where(X.columns.values == feature)[0]
         graph = plt.figure()
-        plt.title(f"the pearson's correlation for {feature} is {pearson_correlation[index][0]}\n")
+        plt.title(f"the pearson's correlation for {feature} is {pearson_correlation[index]}\n")
         plt.xlabel("feature's data")
         plt.ylabel("price")
         plt.plot(X[feature].values,y.values, 'o',color='blue')

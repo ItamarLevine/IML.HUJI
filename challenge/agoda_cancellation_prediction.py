@@ -8,30 +8,31 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import json
 import requests
+from sklearn.preprocessing import OneHotEncoder
 
 BASE_DATE = pd.to_datetime('1/1/2016')
 
 
-def load_data(filename: str):
+def load_data(filename_train: str, filename_test):
     """
     Load Agoda booking cancellation dataset
     Parameters
     ----------
-    filename: str
+    filename_train: str
         Path to house prices dataset
+    filename_test: str
+        Path to test set dataset
 
     Returns
     -------
-    Design matrix and response vector in either of the following formats:
-    1) Single dataframe with last column representing the response
-    2) Tuple of pandas.DataFrame and Series
-    3) Tuple of ndarray of shape (n_samples, n_features) and ndarray of shape (n_samples,)
+    Tuple of dateFrame of the train data, ndarray of the labels and dateFrame of the test data
     """
-    full_data = pd.read_csv(filename).drop_duplicates()
-    l = ["booking_datetime","checkin_date","checkout_date","hotel_live_date"]
-    if "cancellation_datetime" in full_data.columns.values:
-        l.append("cancellation_datetime")
-    for d in l:
+    full_data_train = pd.read_csv(filename_train).drop_duplicates()
+    full_data_train = full_data_train.assign(is_train=np.ones(full_data_train.values.shape[0]))
+    full_data_test = pd.read_csv(filename_test).drop_duplicates()
+    full_data_test = full_data_test.assign(is_train=np.zeros(full_data_test.values.shape[0]))
+    full_data = pd.concat([full_data_train, full_data_test], ignore_index=True)
+    for d in ["booking_datetime","checkin_date","checkout_date","hotel_live_date","cancellation_datetime"]:
         full_data[d] = pd.to_datetime(full_data[d])
     # change nan to 0
     full_data = full_data.fillna(0)
@@ -47,10 +48,6 @@ def load_data(filename: str):
     #                                       'hotel_country_code', 'accommadation_type_name', 'customer_nationality',
     #                                        'guest_nationality_country_name',  'origin_country_code', 'language',
     #                                        'original_payment_method', , 'request_airport' 'hotel_id'
-    did_cancel = 0
-    if "cancellation_datetime" in full_data.columns.values:
-        did_cancel = np.sign(full_data["cancellation_datetime"])
-        full_data = full_data.drop("cancellation_datetime", axis=1)
     features = full_data[['booking_datetime', 'checkin_date', 'checkout_date',
                           'hotel_live_date', 'hotel_star_rating',
                           'guest_is_not_the_customer',
@@ -59,80 +56,29 @@ def load_data(filename: str):
                           'original_selling_amount', 'is_user_logged_in',
                           'cancellation_policy_code', 'is_first_booking', 'request_nonesmoke',
                           'request_latecheckin', 'request_highfloor', 'request_largebed',
-                          'request_twinbeds', 'request_earlycheckin']]
-
+                          'request_twinbeds', 'request_earlycheckin',"is_train"]]
     conversion_rates = requests.get('https://v6.exchangerate-api.com/v6/b7516dbaf2d4a78e08d4c8cf/latest/USD').json()[
         "conversion_rates"]
     to_usd = full_data["original_payment_currency"].apply(lambda x: conversion_rates[x])
     features["original_selling_amount"] = features["original_selling_amount"] * to_usd
+    dummies = ['accommadation_type_name','original_payment_method','guest_nationality_country_name','charge_option','original_payment_type']
+    ohe = OneHotEncoder(handle_unknown='ignore')
+    features = pd.concat([features, pd.DataFrame(ohe.fit_transform(full_data[dummies]).toarray(),index=full_data.index,dtype=int)], axis=1)
+    # features = pd.concat([features, pd.get_dummies(full_data[['accommadation_type_name']])], axis=1)
+    # features = pd.concat([features, pd.get_dummies(full_data[['origin_country_code']])], axis=1)
+    # features = pd.concat([features, pd.get_dummies(full_data[['original_payment_method']])], axis=1)
+    # features = pd.concat([features, pd.get_dummies(full_data[['charge_option']])], axis=1)
+    # features = pd.concat([features, pd.get_dummies(full_data[['original_payment_type']])], axis=1)
+    # features = pd.concat([features, pd.get_dummies(full_data[['hotel_brand_code']])], axis=1)
 
-    #full_data["guest_country.cat"] = pd.Categorical(full_data["guest_nationality_country_name"]).codes
-    #print(full_data["guest_country.cat"].plot.hist())
-
-    features = pd.concat([features, pd.get_dummies(full_data[['accommadation_type_name']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['origin_country_code']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['original_payment_method']])], axis=1)
-    #features = pd.concat([features, pd.get_dummies(full_data[['guest_nationality_country_name']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['charge_option']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['original_payment_type']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['hotel_brand_code']])], axis=1)
-    labels = did_cancel
     features = parse_cancellation_policy(features)
-    return features, labels
-
-
-def load_data2(filename: str):
-    """
-    Load Agoda booking cancellation dataset
-    Parameters
-    ----------
-    filename: str
-        Path to house prices dataset
-    Returns
-    -------
-    Design matrix and response vector in either of the following formats:
-    1) Single dataframe with last column representing the response
-    2) Tuple of pandas.DataFrame and Series
-    3) Tuple of ndarray of shape (n_samples, n_features) and ndarray of shape (n_samples,)
-    """
-    full_data = pd.read_csv(filename).drop_duplicates()
-    # change nan to 0
-    full_data = full_data.fillna(0)
-    # change dates to numbers
-    index_date = np.flatnonzero(np.core.defchararray.find(full_data.columns.values.astype(str), "date") != -1)
-    vec_date_to_numeric = np.vectorize(date_to_numeric)
-    mat = vec_date_to_numeric(full_data.values[:, index_date.astype(int)])
-    for i, feature in enumerate(full_data.columns.values[index_date]):
-        full_data = full_data.drop(feature, axis=1)
-        full_data.insert(int(index_date[i]), feature, mat[:, i], True)
-    # choose the relevant feature, dropped: h_booking_id, h_customer_id 'hotel_area_code', 'hotel_brand_code',
-    #                                       'hotel_chain_code', 'hotel_city_code', original_payment_currency
-    #                                       'hotel_country_code', 'accommadation_type_name', 'customer_nationality',
-    #                                        'guest_nationality_country_name',  'origin_country_code', 'language',
-    #                                        'original_payment_method', , 'request_airport'
-    features = full_data[['booking_datetime', 'checkin_date', 'checkout_date',
-                          'hotel_id', 'hotel_live_date', 'hotel_star_rating',
-                          'guest_is_not_the_customer',
-                          'no_of_adults', 'no_of_children',
-                          'no_of_extra_bed', 'no_of_room',
-                          'original_selling_amount', 'is_user_logged_in',
-                          'cancellation_policy_code', 'is_first_booking', 'request_nonesmoke',
-                          'request_latecheckin', 'request_highfloor', 'request_largebed',
-                          'request_twinbeds', 'request_earlycheckin']]
-    features = pd.concat([features, pd.get_dummies(full_data[['accommadation_type_name']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['original_payment_method']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['guest_nationality_country_name']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['charge_option']])], axis=1)
-    features = pd.concat([features, pd.get_dummies(full_data[['original_payment_type']])], axis=1)
-    # conversion_rates = requests.get('https://v6.exchangerate-api.com/v6/b7516dbaf2d4a78e08d4c8cf/latest/USD').json()[
-    #     "conversion_rates"]
-    # to_usd = full_data["original_payment_currency"].apply(lambda x: conversion_rates[x])
-    # features["original_selling_amount"] = features["original_selling_amount"] * to_usd
-    #labels = np.zeros(len(full_data["cancellation_datetime"]))
-    #labels[np.where(full_data["cancellation_datetime"].values != 0)[0]] = 1
-    labels = full_data["cancellation_datetime"]
-    features = parse_cancellation_policy(features)
-    return features, labels
+    features_train = features[features['is_train'] == 1]
+    features_test = features[features['is_train'] == 0]
+    features_test = features_test.drop("is_train", axis=1)
+    features_train = features_train.drop("is_train", axis=1)
+    labels = np.zeros(full_data_train.values.shape[0])
+    labels[np.where(full_data['cancellation_datetime'] != 0)[0]] = 1
+    return features_train, labels, features_test
 
 
 def date_to_numeric(date):
@@ -207,8 +153,12 @@ def evaluate_and_export(estimator: BaseEstimator, X: np.ndarray, filename: str):
 if __name__ == '__main__':
     np.random.seed(0)
 
+    """
+    Important Note: we pre-processed the train and the test data combine, so load data function must get two 
+    filenames
+    """
     # Load data
-    df, cancellation_labels = load_data("../datasets/agoda_cancellation_train.csv")
+    df, cancellation_labels, test_data = load_data("../datasets/agoda_cancellation_train.csv","../datasets/test_set_week_2.csv")
     # train_X, train_y, test_X, test_y = split_train_test(df, pd.Series(cancellation_labels), 0.75)
     #
     # thresh_y = np.zeros(len(test_y))
@@ -280,5 +230,9 @@ if __name__ == '__main__':
     estimator = LinearRegression().fit(df, cancellation_labels)
 
     # Store model predictions over test set
-    test_X, _ = load_data("../datasets/test_set_week_2.csv")
-    evaluate_and_export(estimator, test_X, "313434235_311119895_315421768.csv")
+    y_ = estimator.predict(test_data)
+    threshold2 = 0.5
+    y_[np.where(y_ <= threshold2)[0]] = 0
+    y_[np.where(y_ > threshold2)[0]] = 1
+    print(len(np.where(y_==1)[0]))
+    pd.DataFrame(y_, columns=["predicted_values"]).to_csv("313434235_311119895_315421768.csv", index=False)
