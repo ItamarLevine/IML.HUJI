@@ -50,7 +50,10 @@ class LDA(BaseEstimator):
         self.mu_ = np.zeros((self.classes_.shape[0],X.shape[1]))
         for c in self.classes_:
             self.mu_[c] = X[y == c].mean(axis=0)
-        self.cov_ = np.cov(X.T)
+        self.cov_ = np.zeros((X.shape[1],X.shape[1]))
+        for c in self.classes_:
+            self.cov_ += (X[y == c] - self.mu_[c]).T @ (X[y == c] - self.mu_[c])
+        self.cov_ /= y.shape[0]
         self._cov_inv = inv(self.cov_)
         self.pi_ = np.bincount(y) / y.shape[0]
 
