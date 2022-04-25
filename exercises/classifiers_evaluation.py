@@ -94,11 +94,11 @@ def compare_gaussian_classifiers():
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
-        fig.suptitle(f"compare LDA and GBA prediction on dataset: {f}")
+        fig.suptitle(f"compare LDA and GNB prediction on dataset: {f}")
         fig.supxlabel("X axis")
         fig.supylabel("Y axis")
         fig.set_figwidth(12)
-        for i,model,name in ((0,lda, "LDA"),(1,gnb,"GBA")):
+        for i,model,name in ((0,lda, "LDA"),(1,gnb,"GNB")):
             pred = model.predict(X)
             acc = loss_functions.accuracy(y, pred)
             ax[i].title.set_text(f"{name} accuracy is {acc}")
@@ -129,11 +129,11 @@ def compare_gaussian_classifiers():
                 else:
                     cov = np.linalg.inv(np.diag(model.vars_[c].reshape(model.vars_.shape[1], )))
                 get_ellipse(model.mu_[c], cov, ax[i])
-        fig.legend(loc='lower left')
+        # fig.legend(loc='lower left')
         plt.show()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    #run_perceptron()
+    run_perceptron()
     compare_gaussian_classifiers()

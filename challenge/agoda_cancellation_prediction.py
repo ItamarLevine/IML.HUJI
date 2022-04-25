@@ -196,7 +196,7 @@ if __name__ == '__main__':
     filenames
     """
     # Load data
-    df, cancellation_labels, test_data = load_data("../datasets/agoda_cancellation_train.csv","../datasets/test_set_week_1.csv")
+    df, cancellation_labels, test_data = load_data("../datasets/agoda_cancellation_train.csv","../datasets/agoda_cancellation_train.csv")
     train_X, train_y, test_X, test_y = split_train_test(df, pd.Series(cancellation_labels), 0.75)
 
     # index = np.where(test_y <= 1000)[0]
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     y_[np.where(y_ <= threshold_binary)[0]] = 0
     y_[np.where(y_ > threshold_binary)[0]] = 1
     for y in [y1_, y_]:
-        loss = f1_score(test_y, y)
+        loss = f1_score(test_y, y, average='macro')
         print(f"linear regression's loss is {loss}")
         accuracy = np.abs(test_y - y).mean()
         print(f"linear regression's accuracy is {accuracy}")
