@@ -1,9 +1,7 @@
-from challenge.agoda_cancellation_estimator import AgodaCancellationEstimator
-from IMLearn.utils import split_train_test
-from IMLearn.base.base_estimator import BaseEstimator
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import json
@@ -166,28 +164,6 @@ def parse_one_cancellation_policy(cancellation):
     return parsed.astype(pd.Series)
 
 
-def evaluate_and_export(estimator: BaseEstimator, X: np.ndarray, filename: str):
-    """
-    Export to specified file the prediction results of given estimator on given testset.
-
-    File saved is in csv format with a single column named 'predicted_values' and n_samples rows containing
-    predicted values.
-
-    Parameters
-    ----------
-    estimator: BaseEstimator or any object implementing predict() method as in BaseEstimator (for example sklearn)
-        Fitted estimator to use for prediction
-
-    X: ndarray of shape (n_samples, n_features)
-        Test design matrix to predict its responses
-
-    filename:
-        path to store file at
-
-    """
-    pd.DataFrame(estimator.predict(X), columns=["predicted_values"]).to_csv(filename, index=False)
-
-
 if __name__ == '__main__':
     np.random.seed(0)
 
@@ -197,7 +173,7 @@ if __name__ == '__main__':
     """
     # Load data
     df, cancellation_labels, test_data = load_data("../datasets/agoda_cancellation_train.csv","../datasets/test_set_week_4.csv")
-    # train_X, train_y, test_X, test_y = split_train_test(df, pd.Series(cancellation_labels), 0.75)
+    train_X, train_y, test_X, test_y = train_test_split(df, pd.Series(cancellation_labels), 0.75)
 
     # index = np.where(test_y <= 1000)[0]
     # not_index = np.setdiff1d(np.arange(len(test_y)),index)
@@ -208,33 +184,33 @@ if __name__ == '__main__':
     # print(f"default loss is {loss}")
 
     # linear regression
-    # linear_regression = LinearRegression()
-    # linear_regression.fit(train_X, train_y)
-    # y_ = linear_regression.predict(test_X)
-    # y1_ = y_ * 1
+    linear_regression = LinearRegression()
+    linear_regression.fit(train_X, train_y)
+    y_ = linear_regression.predict(test_X)
+    y1_ = y_ * 1
     #threshold = 500000
     # index = np.where(0.5 <= y_)[0]
     # not_index = np.setdiff1d(np.arange(len(y_)),index)
     # y_[index] = 1
     # y_[not_index] = 0
     # y_[y_ >= 0.7] = 0
-    # y1_[y1_ < 0.5] = 0
-    # y1_[y1_ >= 0.5] = 1
+    y1_[y1_ < 0.5] = 0
+    y1_[y1_ >= 0.5] = 1
 
-    # threshold_binary = 0.3
-    # y_[np.where(y_ <= threshold_binary)[0]] = 0
-    # y_[np.where(y_ > threshold_binary)[0]] = 1
-    # for y in [y1_, y_]:
-    #     loss = f1_score(test_y, y, average='macro')
-    #     print(f"linear regression's loss is {loss}")
-    #     accuracy = np.abs(test_y - y).mean()
-    #     print(f"linear regression's accuracy is {accuracy}")
-    #     recall = np.sum(test_y * y)
-    #     print(f"linear regression's TP is {recall} out of {np.sum(test_y)}")
-    #     fp = y - test_y
-    #     fp[fp < 0] = 0
-    #     fp = fp.sum()
-    #     print(f"linear regression's FP is {fp} out of {len(test_y) - np.sum(test_y)}\n")
+    threshold_binary = 0.3
+    y_[np.where(y_ <= threshold_binary)[0]] = 0
+    y_[np.where(y_ > threshold_binary)[0]] = 1
+    for y in [y1_, y_]:
+        loss = f1_score(test_y, y, average='macro')
+        print(f"linear regression's loss is {loss}")
+        accuracy = np.abs(test_y - y).mean()
+        print(f"linear regression's accuracy is {accuracy}")
+        recall = np.sum(test_y * y)
+        print(f"linear regression's TP is {recall} out of {np.sum(test_y)}")
+        fp = y - test_y
+        fp[fp < 0] = 0
+        fp = fp.sum()
+        print(f"linear regression's FP is {fp} out of {len(test_y) - np.sum(test_y)}\n")
 
     # logistic regression
     # LR = LogisticRegression()
@@ -290,11 +266,11 @@ if __name__ == '__main__':
     # print(f"combine most's TP is {recall} out of {np.sum(test_y)}")
 
     #Fit model over data
-    estimator = LinearRegression().fit(df, cancellation_labels)
+    # estimator = LinearRegression().fit(df, cancellation_labels)
 
     # Store model predictions over test set
-    y_ = estimator.predict(test_data)
-    threshold2 = 0.3
-    y_[np.where(y_ <= threshold2)[0]] = 0
-    y_[np.where(y_ > threshold2)[0]] = 1
-    pd.DataFrame(y_, columns=["predicted_values"]).to_csv("313434235_311119895_315421768.csv", index=False)
+    # y_ = estimator.predict(test_data)
+    # threshold2 = 0.3
+    # y_[np.where(y_ <= threshold2)[0]] = 0
+    # y_[np.where(y_ > threshold2)[0]] = 1
+    # pd.DataFrame(y_, columns=["predicted_values"]).to_csv("313434235_311119895_315421768.csv", index=False)
