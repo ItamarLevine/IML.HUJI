@@ -3,6 +3,7 @@ from typing import Tuple, NoReturn
 from ...base import BaseEstimator
 import numpy as np
 from itertools import product
+from ...metrics import misclassification_error
 
 
 class DecisionStump(BaseEstimator):
@@ -39,7 +40,10 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        thresholds, errors = np.apply_along_axis(self._find_threshold,0,X,y,1)
+        argmin = np.argmin(errors)
+        self.j_ = argmin
+        self.threshold_ = thresholds[self.j_]
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -63,7 +67,7 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        return np.where(X[:,self.j_] > self.threshold_, -1, 1)
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -95,7 +99,10 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        hme = np.vectorize(_helper_misclassification_error,excluded=[1,2,3])
+        a = hme(values, values, labels, sign)
+        argmin = np.argmin(a)
+        return values[argmin], a[argmin]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -114,4 +121,8 @@ class DecisionStump(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        return misclassification_error(y, self._predict(X))
+
+
+def _helper_misclassification_error(value, values, labels, sign):
+    return misclassification_error(labels, np.where(values > value, -sign, sign))
