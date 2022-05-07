@@ -40,7 +40,9 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        thresholds, errors = np.apply_along_axis(self._find_threshold,0,X,y,1)
+        ind = np.where(y > 0)[0][0]
+        self.sign_ = y[ind]
+        thresholds, errors = np.apply_along_axis(self._find_threshold,0,X,y,self.sign_)
         argmin = np.argmin(errors)
         self.j_ = argmin
         self.threshold_ = thresholds[self.j_]
@@ -67,7 +69,7 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        return np.where(X[:,self.j_] > self.threshold_, -1, 1)
+        return np.where(X[:,self.j_] >= self.threshold_, self.sign_, -self.sign_)
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -125,4 +127,4 @@ class DecisionStump(BaseEstimator):
 
 
 def _helper_misclassification_error(value, values, labels, sign):
-    return misclassification_error(labels, np.where(values > value, -sign, sign))
+    return misclassification_error(labels, np.where(values >= value, sign, -sign))
