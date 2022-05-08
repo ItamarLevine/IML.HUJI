@@ -3,8 +3,7 @@ from typing import Tuple
 from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
 
 
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -42,8 +41,19 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
     # Question 1: Train- and test errors of AdaBoost in noiseless case
     ad = AdaBoost(DecisionStump, n_learners).fit(train_X, train_y)
-    pred = ad.predict(test_X)
-    a = 1
+    graph = plt.figure()
+    plt.title('Temp as function of day of year')
+    plt.ylabel('Temp')
+    plt.xlabel("day of year")
+    train_loss = []
+    test_loss = []
+    for i in range(1, n_learners):
+        train_loss.append(ad.partial_loss(train_X, train_y, i))
+        test_loss.append(ad.partial_loss(test_X, test_y, i))
+    plt.plot(np.arange(n_learners-1)+1, train_loss, label="train data")
+    plt.plot(np.arange(n_learners-1)+1, test_loss, label="test data")
+    plt.legend(loc='right')
+    plt.show()
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])

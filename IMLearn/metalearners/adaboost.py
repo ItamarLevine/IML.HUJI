@@ -1,6 +1,7 @@
 import numpy as np
 from ..base import BaseEstimator
 from typing import Callable, NoReturn
+from ..metrics import misclassification_error
 
 
 class AdaBoost(BaseEstimator):
@@ -54,9 +55,9 @@ class AdaBoost(BaseEstimator):
             self.models_.append(self.wl_())
             self.models_[i]._fit(X, y * self.D_)
             h_x = self.models_[i]._predict(X)
-            eps = np.sum(self.D_ * (np.sign(h_x) != np.sign(y)))
-            self.weights_[i] = 0.5 * np.log(1/eps - 1)
-            self.D_ = self.D_ * np.exp(-y*self.weights_[i]*h_x)
+            eps = np.sum((np.sign(h_x) != np.sign(y)))
+            self.weights_[i] = 0.5 * np.log(X.shape[0]/eps - 1)
+            self.D_ = self.D_ * np.exp(-np.sign(y)*self.weights_[i]*np.sign(h_x))
             self.D_ /= self.D_.sum()
 
     def _predict(self, X):
@@ -73,8 +74,7 @@ class AdaBoost(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        pred = lambda x: x.predict(X)
-        return np.sign(np.sum(np.vectorize(pred)(self.models_), axis=1))
+        return self.partial_predict(X, len(self.models_))
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -93,7 +93,7 @@ class AdaBoost(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        return self.partial_loss(X, y, len(self.models_))
 
     def partial_predict(self, X: np.ndarray, T: int) -> np.ndarray:
         """
@@ -112,7 +112,7 @@ class AdaBoost(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        return np.sign(np.sum(np.array([x._predict(X) for x in self.models_[:T]]), axis=1))
 
     def partial_loss(self, X: np.ndarray, y: np.ndarray, T: int) -> float:
         """
@@ -134,4 +134,4 @@ class AdaBoost(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        return misclassification_error(y, self.partial_predict(X, T))

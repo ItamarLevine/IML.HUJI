@@ -41,8 +41,8 @@ class DecisionStump(BaseEstimator):
             Responses of input data to fit to
         """
         ind = np.where(y > 0)[0][0]
-        self.sign_ = y[ind]
-        thresholds, errors = np.apply_along_axis(self._find_threshold,0,X,y,self.sign_)
+        sign = y[ind]
+        thresholds, errors = np.apply_along_axis(self._find_threshold,0,X,y,sign)
         argmin = np.argmin(errors)
         self.j_ = argmin
         self.threshold_ = thresholds[self.j_]
@@ -103,8 +103,14 @@ class DecisionStump(BaseEstimator):
         """
         hme = np.vectorize(_helper_misclassification_error,excluded=[1,2,3])
         a = hme(values, values, labels, sign)
-        argmin = np.argmin(a)
-        return values[argmin], a[argmin]
+        b = hme(values, values, labels, -sign)
+        argmin_a = np.argmin(a)
+        argmin_b = np.argmin(b)
+        if values[argmin_a] >= values[argmin_b]:
+            self.sign_ = -sign
+            return values[argmin_b], b[argmin_b]
+        self.sign_ = sign
+        return values[argmin_a], a[argmin_a]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
