@@ -101,16 +101,20 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        hme = np.vectorize(_helper_misclassification_error,excluded=[1,2,3])
-        a = hme(values, values, labels, sign)
-        b = hme(values, values, labels, -sign)
-        argmin_a = np.argmin(a)
-        argmin_b = np.argmin(b)
-        if values[argmin_a] >= values[argmin_b]:
+        sign_labels = np.sign(labels)
+        sign_labels[sign_labels == -1] = 0
+        square_x = np.tile(values,(values.shape[0],1)).T
+        all_misclassifications_a = square_x >= values
+        all_misclassifications_a = np.sum(all_misclassifications_a != sign_labels, axis=1) / labels.shape[0]
+        all_misclassifications_b = square_x < values
+        all_misclassifications_b = np.sum(all_misclassifications_b != sign_labels, axis=1) / labels.shape[0]
+        argmin_a = np.argmin(all_misclassifications_a)
+        argmin_b = np.argmin(all_misclassifications_b)
+        if all_misclassifications_a[argmin_a] >= all_misclassifications_b[argmin_b]:
             self.sign_ = -sign
-            return values[argmin_b], b[argmin_b]
+            return values[argmin_b], all_misclassifications_b[argmin_b]
         self.sign_ = sign
-        return values[argmin_a], a[argmin_a]
+        return values[argmin_a], all_misclassifications_a[argmin_a]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -130,7 +134,3 @@ class DecisionStump(BaseEstimator):
             Performance under missclassification loss function
         """
         return misclassification_error(y, self._predict(X))
-
-
-def _helper_misclassification_error(value, values, labels, sign):
-    return misclassification_error(labels, np.where(values >= value, sign, -sign))

@@ -55,8 +55,8 @@ class AdaBoost(BaseEstimator):
             self.models_.append(self.wl_())
             self.models_[i]._fit(X, y * self.D_)
             h_x = self.models_[i]._predict(X)
-            eps = np.sum((np.sign(h_x) != np.sign(y)))
-            self.weights_[i] = 0.5 * np.log(X.shape[0]/eps - 1)
+            eps = np.sum(self.D_ * (np.sign(h_x) != np.sign(y)))
+            self.weights_[i] = 0.5 * np.log(1/eps - 1)
             self.D_ = self.D_ * np.exp(-np.sign(y)*self.weights_[i]*np.sign(h_x))
             self.D_ /= self.D_.sum()
 
