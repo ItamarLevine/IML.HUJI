@@ -21,6 +21,7 @@ class DecisionStump(BaseEstimator):
     self.sign_: int
         The label to predict for samples where the value of the j'th feature is about the threshold
     """
+
     def __init__(self) -> DecisionStump:
         """
         Instantiate a Decision stump classifier
@@ -42,9 +43,8 @@ class DecisionStump(BaseEstimator):
         """
         ind = np.where(y > 0)[0][0]
         sign = y[ind]
-        thresholds, errors = np.apply_along_axis(self._find_threshold,0,X,y,sign)
-        argmin = np.argmin(errors)
-        self.j_ = argmin
+        thresholds, errors = np.apply_along_axis(self._find_threshold, 0, X, y, sign)
+        self.j_ = np.argmin(errors)
         self.threshold_ = thresholds[self.j_]
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
@@ -69,7 +69,7 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        return np.where(X[:,self.j_] >= self.threshold_, self.sign_, -self.sign_)
+        return np.where(X[:, self.j_] >= self.threshold_, self.sign_, -self.sign_)
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -101,13 +101,13 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        sign_labels = np.sign(labels)
+        sign_labels = np.sign(labels).reshape(-1, 1)
         sign_labels[sign_labels == -1] = 0
-        square_x = np.tile(values,(values.shape[0],1)).T
+        square_x = np.tile(values, (values.shape[0], 1)).T
         all_misclassifications_a = square_x >= values
-        all_misclassifications_a = np.sum(all_misclassifications_a != sign_labels, axis=1) / labels.shape[0]
+        all_misclassifications_a = np.sum(np.abs(labels) * (all_misclassifications_a != sign_labels), axis=0)
         all_misclassifications_b = square_x < values
-        all_misclassifications_b = np.sum(all_misclassifications_b != sign_labels, axis=1) / labels.shape[0]
+        all_misclassifications_b = np.sum(np.abs(labels) * (all_misclassifications_b != sign_labels), axis=0)
         argmin_a = np.argmin(all_misclassifications_a)
         argmin_b = np.argmin(all_misclassifications_b)
         if all_misclassifications_a[argmin_a] >= all_misclassifications_b[argmin_b]:
