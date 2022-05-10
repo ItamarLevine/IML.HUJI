@@ -41,11 +41,21 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        ind = np.where(y > 0)[0][0]
-        sign = y[ind]
-        thresholds, errors = np.apply_along_axis(self._find_threshold, 0, X, y, sign)
-        self.j_ = np.argmin(errors)
-        self.threshold_ = thresholds[self.j_]
+        self.threshold_, min_error = np.inf, np.inf
+        for sign, index in product([1,-1], range(X.shape[1])):
+            thresh, error = self._find_threshold(X[:,index], y, sign)
+            if error < min_error:
+                min_error = error
+                self.threshold_ = thresh
+                self.j_ = index
+                self.sign_ = sign
+        # loss_star, theta_star = np.inf, np.inf
+        # for sign, j in product([-1, 1], range(X.shape[1])):
+        #     loss, theta = self._find_threshold(X[:,j], y, sign)
+        #     if loss < loss_star:
+        #         self.sign_, self.threshold_, self.j_ = sign, theta, j
+        #         loss_star = loss
+        self.fitted_ = True
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -101,20 +111,17 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        sign_labels = np.sign(labels).reshape(-1, 1)
-        sign_labels[sign_labels == -1] = 0
-        square_x = np.tile(values, (values.shape[0], 1)).T
-        all_misclassifications_a = square_x >= values
-        all_misclassifications_a = np.sum(np.abs(labels) * (all_misclassifications_a != sign_labels), axis=0)
-        all_misclassifications_b = square_x < values
-        all_misclassifications_b = np.sum(np.abs(labels) * (all_misclassifications_b != sign_labels), axis=0)
-        argmin_a = np.argmin(all_misclassifications_a)
-        argmin_b = np.argmin(all_misclassifications_b)
-        if all_misclassifications_a[argmin_a] >= all_misclassifications_b[argmin_b]:
-            self.sign_ = -sign
-            return values[argmin_b], all_misclassifications_b[argmin_b]
-        self.sign_ = sign
-        return values[argmin_a], all_misclassifications_a[argmin_a]
+        sorted_index = np.argsort(values)
+        sort_x, sort_labels = values[sorted_index], np.sign(labels[sorted_index])
+        error = np.zeros(len(sort_labels))
+        error[0] = np.sum(np.abs(labels[sorted_index]) * (sort_labels != np.ones(len(sort_labels)) * sign))
+        for i in range(len(sort_labels)-1):
+            if sort_labels[i] == -sign:
+                error[i+1] = error[i] - 1 * np.abs(labels[sorted_index[i]])
+            else:
+                error[i+1] = error[i] + 1 * np.abs(labels[sorted_index[i]])
+        min_ind = np.argmin(error)
+        return sort_x[min_ind], error[min_ind]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
