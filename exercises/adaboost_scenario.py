@@ -60,14 +60,14 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
     fig, ax = plt.subplots(nrows=2, ncols=2)
     fig.suptitle("decision boundary of AdaBoost with different number of learners")
-    cm = ListedColormap(['#0000FF','#FF0000'])
+    cm = ListedColormap(['#FF0000','#0000FF'])
     min_t, min_error = np.inf, np.inf
     for i, t in enumerate(T):
-        d_s(lambda x: ad.partial_predict(x, t), lims[0], lims[1], ax[i//2][i%2],dotted=True)
-        ax[i//2][i%2].scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=2, cmap=cm)
-        ax[i//2][i%2].title.set_text(f"{t} fitted learners")
+        d_s(lambda x: ad.partial_predict(x, t), lims[0], lims[1], ax[i // 2][i % 2])
+        ax[i // 2][i % 2].scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=2, cmap=cm)
+        ax[i // 2][i % 2].title.set_text(f"{t} fitted learners")
         ax[i // 2][i % 2].axis('off')
-        loss = ad.partial_loss(test_X,test_y,t)
+        loss = ad.partial_loss(test_X, test_y, t)
         if loss < min_error:
             min_error = loss
             min_t = t
@@ -76,21 +76,27 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     # Question 3: Decision surface of best performing ensemble
     graph = plt.figure()
     plt.title(f"best error got from {min_t} learners, and it got loss: {min_error}")
-    d_s(lambda x: ad.partial_predict(x, min_t), lims[0], lims[1], plt, dotted=True)
+    d_s(lambda x: ad.partial_predict(x, min_t), lims[0], lims[1], plt)
     plt.scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=2, cmap=cm)
     plt.show()
     # Question 4: Decision surface with weighted samples
-    raise NotImplementedError()
+    graph = plt.figure()
+    plt.title(f"decision surface where labels with weights")
+    d = (ad.D_ / np.max(ad.D_)) * 5
+    d_s(lambda x: ad.partial_predict(x, 250), lims[0], lims[1], plt)
+    plt.scatter(train_X[:, 0], train_X[:, 1], c=train_y, s=d, cmap=cm)
+    plt.show()
 
 
-def d_s(predict, xrange, yrange, plot, density=120, dotted=False):
-    cm_b= ListedColormap(['#AAAAFF','#FFAAAA'])
+def d_s(predict, xrange, yrange, plot, density=120):
+    cm_b = ListedColormap(['#FFAAAA','#AAAAFF'])
     xrange, yrange = np.linspace(*xrange, density), np.linspace(*yrange, density)
     xx, yy = np.meshgrid(xrange, yrange)
     pred = predict(np.c_[xx.ravel(), yy.ravel()])
-    plot.pcolormesh(xx, yy, pred.reshape(xx.shape), cmap=cm_b,shading='auto')
+    plot.pcolormesh(xx, yy, pred.reshape(xx.shape), cmap=cm_b, shading='auto')
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     fit_and_evaluate_adaboost(0)
+    fit_and_evaluate_adaboost(0.4)
