@@ -4,6 +4,7 @@ from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -42,28 +43,52 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     # Question 1: Train- and test errors of AdaBoost in noiseless case
     ad = AdaBoost(DecisionStump, n_learners).fit(train_X, train_y)
     graph = plt.figure()
-    plt.title('Temp as function of day of year')
-    plt.ylabel('Temp')
-    plt.xlabel("day of year")
+    plt.title('AdaBoost loss in function of learners')
+    plt.ylabel('loss')
+    plt.xlabel("number of learners")
     train_loss = []
     test_loss = []
     for i in range(1, n_learners):
         train_loss.append(ad.partial_loss(train_X, train_y, i))
         test_loss.append(ad.partial_loss(test_X, test_y, i))
-    plt.plot(np.arange(n_learners-1)+1, train_loss, label="train data")
-    plt.plot(np.arange(n_learners-1)+1, test_loss, label="test data")
+    plt.plot(np.arange(n_learners - 1) + 1, train_loss, label="train data")
+    plt.plot(np.arange(n_learners - 1) + 1, test_loss, label="test data")
     plt.legend(loc='right')
     plt.show()
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
-    raise NotImplementedError()
+    fig, ax = plt.subplots(nrows=2, ncols=2)
+    fig.suptitle("decision boundary of AdaBoost with different number of learners")
+    cm = ListedColormap(['#0000FF','#FF0000'])
+    min_t, min_error = np.inf, np.inf
+    for i, t in enumerate(T):
+        d_s(lambda x: ad.partial_predict(x, t), lims[0], lims[1], ax[i//2][i%2],dotted=True)
+        ax[i//2][i%2].scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=2, cmap=cm)
+        ax[i//2][i%2].title.set_text(f"{t} fitted learners")
+        ax[i // 2][i % 2].axis('off')
+        loss = ad.partial_loss(test_X,test_y,t)
+        if loss < min_error:
+            min_error = loss
+            min_t = t
+    plt.show()
 
     # Question 3: Decision surface of best performing ensemble
-    raise NotImplementedError()
-
+    graph = plt.figure()
+    plt.title(f"best error got from {min_t} learners, and it got loss: {min_error}")
+    d_s(lambda x: ad.partial_predict(x, min_t), lims[0], lims[1], plt, dotted=True)
+    plt.scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=2, cmap=cm)
+    plt.show()
     # Question 4: Decision surface with weighted samples
     raise NotImplementedError()
+
+
+def d_s(predict, xrange, yrange, plot, density=120, dotted=False):
+    cm_b= ListedColormap(['#AAAAFF','#FFAAAA'])
+    xrange, yrange = np.linspace(*xrange, density), np.linspace(*yrange, density)
+    xx, yy = np.meshgrid(xrange, yrange)
+    pred = predict(np.c_[xx.ravel(), yy.ravel()])
+    plot.pcolormesh(xx, yy, pred.reshape(xx.shape), cmap=cm_b,shading='auto')
 
 
 if __name__ == '__main__':
