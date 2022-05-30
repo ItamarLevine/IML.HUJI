@@ -33,12 +33,16 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
         Responses of test samples
 
     """
+    if type(X) == pd.DataFrame:
+        X = X.values
+    if type(y) == pd.DataFrame:
+        y = y.values
     index = np.random.randint(len(X), size=int(np.ceil(train_proportion*len(X))))
-    train_x = X.values[index]
-    train_y = y.values[index]
+    train_x = X[index]
+    train_y = y[index]
     index = np.setdiff1d(np.arange(len(X)), index)
-    test_x = X.values[index]
-    test_y = y.values[index]
+    test_x = X[index]
+    test_y = y[index]
     return pd.DataFrame(train_x), pd.Series(train_y), pd.DataFrame(test_x), pd.Series(test_y)
 
 
