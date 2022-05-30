@@ -37,4 +37,5 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
+    a = 1
     raise NotImplementedError()
