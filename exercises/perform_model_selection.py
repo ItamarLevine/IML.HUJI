@@ -27,8 +27,11 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     """
     # Question 1 - Generate dataset for model f(x)=(x+3)(x+2)(x+1)(x-1)(x-2) + eps for eps Gaussian noise
     # and split into training- and testing portions
-    raise NotImplementedError()
-
+    x = np.random.randint(-1.2, 2, 100)
+    f_x = (x+3)(x+2)(x+1)(x-1)(x-2)
+    eps = np.random.normal(0,5,100)
+    noisy_model = f_x + eps
+    train_x, train_y, test_x, test_y = split_train_test(x, noisy_model, 2/3)
     # Question 2 - Perform CV for polynomial fitting with degrees 0,1,...,10
     raise NotImplementedError()
 

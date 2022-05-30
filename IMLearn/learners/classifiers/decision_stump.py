@@ -108,7 +108,7 @@ class DecisionStump(BaseEstimator):
 
         Notes
         -----
-        For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
+        For every tested threshold, values strictlwy below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
         sorted_index = np.argsort(values)
