@@ -51,7 +51,7 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        if not self.include_intercept_:
+        if self.include_intercept_:
             X = np.hstack((np.ones(len(X)).reshape((-1,1)),X))
         u, sigma,v = numpy.linalg.svd(X)
         sigma_cross = np.zeros(X.shape)
@@ -74,7 +74,7 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        if not self.include_intercept_:
+        if self.include_intercept_:
             X = np.hstack((np.ones(len(X)).reshape((-1,1)),X))
         return X @ self.coefs_
 

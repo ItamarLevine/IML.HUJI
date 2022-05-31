@@ -86,37 +86,46 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     train_x, test_x, train_y, test_y = X[:n_samples], X[n_samples:], y[:n_samples], y[n_samples:]
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    ridge_lambda_range = np.linspace(0,1, n_evaluations)
+    lambda_range = np.linspace(0,1, n_evaluations)
     train_losses = []
     validation_losses = []
     plt.Figure()
-    for lam in ridge_lambda_range:
+    for lam in lambda_range:
         losses = cross_validate(RidgeRegression(lam),train_x,train_y,mean_square_error)
         train_losses.append(losses[0])
         validation_losses.append((losses[1]))
-    plt.plot(ridge_lambda_range, train_losses, label="Ridge train loss")
-    plt.plot(ridge_lambda_range, validation_losses, label="Ridge validation loss")
+    plt.plot(lambda_range, train_losses, label="Ridge train loss")
+    plt.plot(lambda_range, validation_losses, label="Ridge validation loss")
     plt.legend(loc='best')
     plt.show()
+    ridge_lam_star = lambda_range[np.argmin(validation_losses)]
 
     train_losses = []
     validation_losses = []
     plt.Figure()
-    for lam in ridge_lambda_range:
+    for lam in lambda_range:
         losses = cross_validate(Lasso(lam),train_x,train_y,mean_square_error)
         train_losses.append(losses[0])
         validation_losses.append((losses[1]))
-    plt.plot(ridge_lambda_range, train_losses, label="Lasso train loss")
-    plt.plot(ridge_lambda_range, validation_losses, label="Lasso validation loss")
+    plt.plot(lambda_range, train_losses, label="Lasso train loss")
+    plt.plot(lambda_range, validation_losses, label="Lasso validation loss")
     plt.legend(loc='best')
     plt.show()
+    lasso_lam_star = lambda_range[np.argmin(validation_losses)]
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
-    raise NotImplementedError()
+    print(f"best lambda for Ridge regression is {ridge_lam_star}")
+    print(f"best lambda for Lasso regression is {lasso_lam_star}")
+    lr = LinearRegression().fit(X,y)
+    lasso = Lasso(lasso_lam_star).fit(X,y)
+    ridge = RidgeRegression(float(ridge_lam_star)).fit(X,y)
+    print(f"MSE for Linear regression is {mean_square_error(y,lr.predict(X))}")
+    print(f"MSE for Ridge regression with lambda {ridge_lam_star} is {mean_square_error(y,ridge.predict(X))}")
+    print(f"MSE for Lasso regression lambda {lasso_lam_star} is {mean_square_error(y,lasso.predict(X))}")
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # select_polynomial_degree()
-    # select_polynomial_degree(noise=0)
-    # select_polynomial_degree(n_samples=1500, noise=10)
+    select_polynomial_degree()
+    select_polynomial_degree(noise=0)
+    select_polynomial_degree(n_samples=1500, noise=10)
     select_regularization_parameter()
