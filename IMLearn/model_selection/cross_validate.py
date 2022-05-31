@@ -40,29 +40,12 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     """
     folds = []
     for i in range(cv):
-        folds.append((X[int(X.shape[0]*i/cv):int(X.shape[0]*(i+1)/cv)], y[int(y.shape[0]*i/cv):int(y.shape[0]*(i+1)/cv)]))
+        folds.append(np.arange(len(X))[int(X.shape[0] * i / cv):int(X.shape[0] * (i + 1) / cv)])
     losses_train = []
     losses_validation = []
     for i in range(cv):
-        if len(X.shape) == 2:
-            comb_x = np.empty((int(((cv-1)/cv)*X.shape[0]),X.shape[1]))
-        else:
-            comb_x = np.empty((int(((cv-1)/cv)*X.shape[0])))
-        comb_y = np.empty((int(((cv - 1) / cv) * y.shape[0])))
-        for j in range(cv):
-            if i > j:
-                start_index = int(j*comb_x.shape[0]/(cv-1))
-                # end_index = int((j+1)*comb_x.shape[0]/(cv-1))
-                end_index = start_index + len(folds[j][0])
-                comb_x[start_index:end_index] = folds[j][0]
-                comb_y[start_index:end_index] = folds[j][1]
-            if i < j:
-                start_index = int((j-1) * comb_x.shape[0] / (cv - 1))
-                # end_index = int(j * comb_x.shape[0] / (cv - 1))
-                end_index = start_index + len(folds[j][0])
-                comb_x[start_index:end_index] = folds[j][0]
-                comb_y[start_index:end_index] = folds[j][1]
-        fitted = estimator.fit(comb_x, comb_y)
-        losses_train.append(scoring(comb_y, fitted.predict(comb_x)))
-        losses_validation.append(scoring(folds[i][1], fitted.predict(folds[i][0])))
+        index = np.setdiff1d(np.arange(len(X)), folds[i])
+        fitted = estimator.fit(X[index], y[index])
+        losses_train.append(scoring(y[index], fitted.predict(X[index])))
+        losses_validation.append(scoring(y[folds[i]], fitted.predict(X[folds[i]])))
     return np.array(losses_train).mean(), np.array(losses_validation).mean()
