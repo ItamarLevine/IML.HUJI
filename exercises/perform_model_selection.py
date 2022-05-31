@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn import datasets
@@ -27,16 +29,42 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     """
     # Question 1 - Generate dataset for model f(x)=(x+3)(x+2)(x+1)(x-1)(x-2) + eps for eps Gaussian noise
     # and split into training- and testing portions
-    x = np.random.randint(-1.2, 2, 100)
-    f_x = (x+3)(x+2)(x+1)(x-1)(x-2)
-    eps = np.random.normal(0,5,100)
+    x = np.linspace(-1.2, 2, n_samples)
+    f_x = (x+3)*(x+2)*(x+1)*(x-1)*(x-2)
+    eps = np.random.normal(0,noise,n_samples)
     noisy_model = f_x + eps
     train_x, train_y, test_x, test_y = split_train_test(x, noisy_model, 2/3)
+    train_x, train_y, test_x, test_y = np.array(train_x), np.array(train_y), np.array(test_x), np.array(test_y)
+    plt.Figure()
+    plt.ylabel('f(x)')
+    plt.xlabel("x")
+    plt.scatter(x, f_x, label="noiseless data",s=5)
+    plt.scatter(train_x,train_y, label="train data",s=5)
+    plt.scatter(test_x,test_y, label="test data",s=5)
+    plt.legend(loc='best')
+    plt.show()
     # Question 2 - Perform CV for polynomial fitting with degrees 0,1,...,10
-    raise NotImplementedError()
-
+    plt.Figure()
+    plt.title("Polynomial fitting's cross validation")
+    plt.ylabel('loss')
+    plt.xlabel("Polynomial fitting's rank")
+    train_losses = []
+    validation_losses = []
+    for k in range(11):
+        losses = cross_validate(PolynomialFitting(k),train_x,train_y,mean_square_error)
+        train_losses.append(losses[0])
+        validation_losses.append((losses[1]))
+    plt.plot(np.arange(11), train_losses,label="train loss")
+    plt.plot(np.arange(11), validation_losses, label="validation loss")
+    plt.legend(loc='best')
+    plt.show()
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
-    raise NotImplementedError()
+    k_star = np.argmin(validation_losses)
+    best_poly = PolynomialFitting(int(k_star))
+    best_poly.fit(train_x,train_y)
+    print(f"best polynomial's rank is {k_star}")
+    print(f"CV's validation error for rank {k_star} is: {validation_losses[k_star]}")
+    print(f"regular Polynomimal fitting model with rank {k_star}'s test error is: {mean_square_error(test_y,best_poly.predict(test_x))}")
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -64,4 +92,6 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
 
 if __name__ == '__main__':
     np.random.seed(0)
+    select_polynomial_degree()
+    select_polynomial_degree(noise=0)
     raise NotImplementedError()
