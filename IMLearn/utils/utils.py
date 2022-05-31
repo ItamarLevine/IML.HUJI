@@ -37,7 +37,7 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
         X = X.values
     if type(y) == pd.DataFrame:
         y = y.values
-    index = np.random.randint(len(X), size=int(np.ceil(train_proportion*len(X))))
+    index = np.random.choice(np.arange(len(X)), size=int(np.ceil(train_proportion*len(X))), replace=False)
     train_x = X[index]
     train_y = y[index]
     index = np.setdiff1d(np.arange(len(X)), index)
