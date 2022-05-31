@@ -36,6 +36,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     train_x, train_y, test_x, test_y = split_train_test(x, noisy_model, 2/3)
     train_x, train_y, test_x, test_y = np.array(train_x), np.array(train_y), np.array(test_x), np.array(test_y)
     plt.Figure()
+    plt.title(f'f(x) with noise={noise} and {n_samples} samples')
     plt.ylabel('f(x)')
     plt.xlabel("x")
     plt.scatter(x, f_x, label="noiseless data",s=5)
@@ -45,7 +46,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     plt.show()
     # Question 2 - Perform CV for polynomial fitting with degrees 0,1,...,10
     plt.Figure()
-    plt.title("Polynomial fitting's cross validation")
+    plt.title(f"Polynomial fitting's cross validation with noise={noise} and {n_samples} samples")
     plt.ylabel('loss')
     plt.xlabel("Polynomial fitting's rank")
     train_losses = []
@@ -54,7 +55,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
         losses = cross_validate(PolynomialFitting(k),train_x,train_y,mean_square_error)
         train_losses.append(losses[0])
         validation_losses.append((losses[1]))
-    plt.plot(np.arange(11), train_losses,label="train loss")
+    plt.plot(np.arange(11), train_losses, label="train loss")
     plt.plot(np.arange(11), validation_losses, label="validation loss")
     plt.legend(loc='best')
     plt.show()
@@ -64,7 +65,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     best_poly.fit(train_x,train_y)
     print(f"best polynomial's rank is {k_star}")
     print(f"CV's validation error for rank {k_star} is: {validation_losses[k_star]}")
-    print(f"regular Polynomimal fitting model with rank {k_star}'s test error is: {mean_square_error(test_y,best_poly.predict(test_x))}")
+    print(f"regular Polynomial fitting model with rank {k_star}'s test error is: {mean_square_error(test_y,best_poly.predict(test_x))}")
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -94,4 +95,4 @@ if __name__ == '__main__':
     np.random.seed(0)
     select_polynomial_degree()
     select_polynomial_degree(noise=0)
-    raise NotImplementedError()
+    select_polynomial_degree(n_samples=1500, noise=10)
